@@ -1,0 +1,544 @@
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+h1, h2, h3, h4, h5 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 500px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.company-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.company-box {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.company-box h4 {
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.company-box > p {
+    margin: 5px 0;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.info-box {
+    margin-top: 15px;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.info-box h5 {
+    margin-top: 0;
+    color: #3498db;
+}
+
+.info-box p {
+    margin: 5px 0;
+}
+
+.info-box.desired {
+    border-left: 4px solid #27ae60;
+}
+
+.info-box.current {
+    border-left: 4px solid #e74c3c;
+}
+
+.score-details {
+    margin-top: 20px;
+    background-color: #e9f7ef;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.score-details h4 {
+    margin-top: 0;
+    color: #27ae60;
+}
+
+.total-score {
+    font-size: 1.2em;
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.score {
+    font-weight: bold;
+    color: #2980b9;
+}
+
+.details-button {
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.details-button:hover {
+    background-color: #2980b9;
+}
+
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+    color: #007bff;
+}
+
+.badge {
+    font-size: 1em;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9em;  /* Mindre typsnittsstorlek för etiketter */
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    font-size: 1em;  /* Normal typsnittsstorlek för inputfält */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button[type="submit"]:hover {
+    background-color: #45a049;
+}
+
+.company-form .custom-form-group {
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.company-form .custom-label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.company-form .custom-input {
+    width: 100%;
+    padding: 8px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: white;
+}
+
+.company-form .custom-input::placeholder {
+    color: transparent;
+}
+
+.company-form .custom-submit-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.company-form .custom-submit-button:hover {
+    background-color: #45a049;
+}
+
+.size-range {
+    display: flex;
+    align-items: center;
+}
+
+.size-input {
+    width: calc(50% - 10px); /* Justerar bredden för att passa bindestreck */
+}
+
+.size-separator {
+    margin: 0 10px;
+    font-weight: bold;
+}
+
+.error {
+    border-color: red;
+}
+
+.error-message {
+    color: red;
+    font-size: 0.8em;
+    margin-top: 5px;
+}
+
+.logo {
+    font-size: 24px; /* Justera storleken efter behov */
+    font-weight: bold;
+}
+
+.logo .locality {
+    color: #00008B; /* eller rgb(0, 0, 139) */
+}
+
+.logo .matcher {
+    color: gray;
+}
+
+.confirmation-message {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    text-align: center;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.company-list {
+    /* Add any styles for the overall list container */
+}
+
+.company-item {
+    cursor: pointer;
+    padding: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.company-item:hover {
+    background-color: #f0f0f0; /* Light grey background on hover */
+    color: #333; /* Darker text color on hover */
+}
+
+/* You can add more styles as needed */
+
+.company-list .company-item {
+    cursor: pointer;
+    padding: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.company-list .company-item:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.card.company-form {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 500px;
+}
+
+.card.company-form h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.custom-submit-button,
+.custom-delete-button,
+.custom-cancel-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.custom-submit-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.custom-submit-button:hover {
+    background-color: #45a049;
+}
+
+.custom-delete-button {
+    background-color: #f44336;
+    color: white;
+}
+
+.custom-delete-button:hover {
+    background-color: #da190b;
+}
+
+.custom-cancel-button {
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+.custom-cancel-button:hover {
+    background-color: #ddd;
+}
+
+.confirmation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+}
+
+.confirmation-dialog {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.confirmation-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.confirm-button,
+.cancel-button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.confirm-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.cancel-button {
+    background-color: #f44336;
+    color: white;
+}
+
+.notification-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+}
+
+.notification-dialog {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.notification-button {
+    padding: 10px 20px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    background-color: #4CAF50;
+    color: white;
+}
+
+.disabled-input {
+    background-color: #f0f0f0;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.info-text {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.custom-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: white !important;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.custom-input::placeholder {
+    color: #999;
+}
+
+.custom-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
