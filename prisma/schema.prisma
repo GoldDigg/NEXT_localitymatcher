@@ -11,18 +11,18 @@ generator client {
 }
 
 model Company {
-  id               Int       @id @default(autoincrement())
-  name             String
-  orgNumber        String
-  streetAddress    String
-  area             String
-  size             Float?
-  rent             Float?
-  features         String[]
-  contractEndDate  DateTime?
-  desiredAreas     String[]
-  desiredSizeMin   Float?
-  desiredSizeMax   Float?
-  desiredMaxRent   Float?
-  desiredFeatures  String[]
+  id              Int      @id @default(autoincrement())
+  name            String
+  orgNumber       String   @unique
+  streetAddress   String?
+  area            String?
+  size            Float?
+  rent            Float?
+  features        String[]
+  contractEndDate DateTime?
+  desiredAreas    String[]
+  desiredSizeMin  Float?
+  desiredSizeMax  Float?
+  desiredMaxRent  Float?
+  desiredFeatures String[]
 }
