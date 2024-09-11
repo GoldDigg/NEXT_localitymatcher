@@ -10,6 +10,7 @@
     justify-content: center;
     z-index: 1000;
     padding: 80px; /* Ökat padding för att ge mer utrymme */
+    cursor: pointer;
   }
   
   .modal-overlay .card.company-form {
@@ -88,6 +89,7 @@
     max-height: 90vh; /* Limit the height to 90% of the viewport height */
     overflow-y: auto; /* Add vertical scrolling to the content */
     margin: auto; /* Center the content vertically if it's shorter than the screen */
+    cursor: default;
   }
   
   /* Ensure the form inside the modal doesn't exceed the modal's height */
@@ -257,3 +259,97 @@
       /* Lägg sedan till de stilar vi definierade ovan */
   }
   
+  .modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .modalContent {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .formGroup {
+    margin-bottom: 15px;
+  }
+
+  .formGroup label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+
+  .tagInputContainer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: 5px;
+  }
+
+  .tag {
+    background-color: #e0e0e0;
+    border-radius: 16px;
+    padding: 2px 8px;
+    margin: 2px;
+    display: flex;
+    align-items: center;
+  }
+
+  .tag button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 5px;
+  }
+
+  .tagInputContainer input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    padding: 5px;
+  }
+
+  .modalContent .companyName {
+    font-weight: normal !important;
+    font-size: 1.2em;
+    margin-bottom: 1em;
+  }
+
+  .company-name-normal {
+    font-weight: normal !important;
+  }
+
+  .companyName {
+    font-weight: normal !important;
+    font-family: Arial, sans-serif !important;
+    font-size: 16px !important;
+    color: inherit !important;
+    margin-bottom: 1em;
+    display: block;
+  }
+
+  .custom-label:focus {
+    outline: none;
+  }

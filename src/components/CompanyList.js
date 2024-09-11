@@ -1,15 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import CompanyModal from './CompanyModal.js';
+import CompanyModal from './CompanyModal';
+import { useNotification } from './NotificationContext';
 
 function CompanyList() {
     const [companies, setCompanies] = useState([]);
     const [sortAscending, setSortAscending] = useState(true);
     const [selectedCompany, setSelectedCompany] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [hoveredCompanyId, setHoveredCompanyId] = useState(null);
+    const { showNotification } = useNotification();
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     useEffect(() => {
         fetchCompanies();
-    }, []);
+    }, [refreshTrigger]);
+
+    useEffect(() => {
+        console.log('selectedCompany updated:', selectedCompany);
+    }, [selectedCompany]);
+
+    useEffect(() => {
+        console.log('selectedCompany changed:', selectedCompany);
+    }, [selectedCompany]);
+
+    useEffect(() => {
+        console.log('Rendering CompanyModal:', !!selectedCompany);
+    }, [selectedCompany]);
 
     const fetchCompanies = async () => {
         try {
@@ -42,22 +58,29 @@ function CompanyList() {
         sortCompanies(companies);
     };
 
-    const handleCompanyClick = async (company) => {
+    const handleCompanyClick = async (companyId) => {
+        console.log('Company clicked:', companyId);
         try {
-            const response = await fetch(`/api/companies/${company.id}`);
+            const response = await fetch(`/api/companies/${companyId}`);
+            console.log('API response status:', response.status);
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const fullCompanyData = await response.json();
-            setSelectedCompany(fullCompanyData);
+            
+            const data = await response.json();
+            console.log('Fetched company data:', data);
+            setSelectedCompany(data);
         } catch (error) {
-            console.error('Error fetching company details:', error);
+            console.error('Error fetching company:', error);
+            showNotification(`Ett fel uppstod vid hämtning av företaget: ${error.message}`, 'error');
         }
     };
 
     const handleCloseModal = () => {
         setSelectedCompany(null);
-        fetchCompanies(); // Refresh the list after editing or deleting
+        setIsModalOpen(false);
+        triggerRefresh();
     };
 
     const getCompanyStyle = (companyId) => ({
@@ -67,6 +90,32 @@ function CompanyList() {
         color: hoveredCompanyId === companyId ? '#333' : 'inherit',
         transition: 'background-color 0.3s ease, color 0.3s ease',
     });
+
+    const triggerRefresh = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
+
+    const handleCompanyAdded = () => {
+        triggerRefresh();
+        showNotification('Företaget har lagts till', 'success');
+    };
+
+    const handleCompanyUpdated = (updatedCompany) => {
+        if (updatedCompany) {
+            setCompanies(prevCompanies => 
+                prevCompanies.map(company => 
+                    company.id === updatedCompany.id ? updatedCompany : company
+                )
+            );
+        } else {
+            // If updatedCompany is null, it means the company was deleted
+            setCompanies(prevCompanies => 
+                prevCompanies.filter(company => company.id !== selectedCompany.id)
+            );
+        }
+        setSelectedCompany(null);
+        triggerRefresh();
+    };
 
     return (
         <div>
@@ -78,7 +127,7 @@ function CompanyList() {
                 {companies.map(company => (
                     <li 
                         key={company.id} 
-                        onClick={() => handleCompanyClick(company)}
+                        onClick={() => handleCompanyClick(company.id)}
                         onMouseEnter={() => setHoveredCompanyId(company.id)}
                         onMouseLeave={() => setHoveredCompanyId(null)}
                         style={getCompanyStyle(company.id)}
@@ -90,8 +139,11 @@ function CompanyList() {
             {selectedCompany && (
                 <CompanyModal 
                     company={selectedCompany} 
-                    onClose={() => setSelectedCompany(null)} 
-                    onCompanyUpdated={fetchCompanies} // eller någon annan funktion som uppdaterar listan
+                    onClose={() => {
+                        console.log('Closing modal');
+                        setSelectedCompany(null);
+                    }} 
+                    onCompanyUpdated={handleCompanyUpdated} 
                 />
             )}
         </div>

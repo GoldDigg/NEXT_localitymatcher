@@ -1,284 +1,286 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useConfirmation } from './ConfirmationContext';
-import { useNotification } from './NotificationContext';
-import { debounce } from 'lodash';
-import styles from './CompanyModal.module.css'; // Lägg till denna rad om du skapar en separat CSS-fil
+import React, { useState, useEffect } from 'react';
+import { useConfirmation } from '../components/ConfirmationContext';
+import { useNotification } from '../components/NotificationContext';
+import TagInput from './TagInput';
+import styles from './CompanyModal.module.css';
+
+const Chip = ({ label, onDelete }) => (
+  <span style={{
+    display: 'inline-block',
+    padding: '2px 8px',
+    margin: '2px',
+    backgroundColor: '#e0e0e0',
+    borderRadius: '16px',
+    fontSize: '14px'
+  }}>
+    {label}
+    <button onClick={onDelete} style={{
+      marginLeft: '4px',
+      border: 'none',
+      background: 'none',
+      cursor: 'pointer',
+      fontSize: '14px'
+    }}>
+      ×
+    </button>
+  </span>
+);
 
 function CompanyModal({ company, onClose, onCompanyUpdated }) {
+    console.log('CompanyModal rendering with company:', company);
+    const [editedCompany, setEditedCompany] = useState(company);
     const { showConfirmation } = useConfirmation();
+    console.log('showConfirmation:', showConfirmation);
     const { showNotification } = useNotification();
-    const [name, setName] = useState(company.name || '');
-    const [orgNumber, setOrgNumber] = useState(company.orgNumber || '');
-    const [streetAddress, setStreetAddress] = useState(company.streetAddress || '');
-    const [area, setArea] = useState(company.area || '');
-    const [size, setSize] = useState(company.size || '');
-    const [rent, setRent] = useState(company.rent || '');
-    const [features, setFeatures] = useState(company.features || []);
-    const [contractEndDate, setContractEndDate] = useState(company.contractEndDate || '');
-    const [desiredAreas, setDesiredAreas] = useState(company.desiredAreas || []);
-    const [desiredSizeMin, setDesiredSizeMin] = useState(company.desiredSizeMin || '');
-    const [desiredSizeMax, setDesiredSizeMax] = useState(company.desiredSizeMax || '');
-    const [desiredMaxRent, setDesiredMaxRent] = useState(company.desiredMaxRent || '');
-    const [desiredFeatures, setDesiredFeatures] = useState(company.desiredFeatures || []);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const modalRef = useRef(null);
-    const [modalHeight, setModalHeight] = useState('auto');
 
     useEffect(() => {
-        const adjustModalHeight = () => {
-            if (modalRef.current) {
-                const windowHeight = window.innerHeight;
-                const marginVertical = 80; // 80px marginal i topp och botten
-                const availableHeight = windowHeight - (2 * marginVertical);
-                setModalHeight(`${availableHeight}px`);
+        setEditedCompany({
+            ...company,
+            features: Array.isArray(company.features) ? company.features : [],
+            desiredAreas: Array.isArray(company.desiredAreas) ? company.desiredAreas : [],
+            desiredFeatures: Array.isArray(company.desiredFeatures) ? company.desiredFeatures : [],
+        });
+    }, [company]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setEditedCompany(prev => {
+            let updatedValue = value;
+            if (name === 'contractEndDate') {
+                updatedValue = value ? new Date(value).toISOString() : null;
             }
-        };
+            const updated = { ...prev, [name]: updatedValue };
+            console.log('Updated state:', updated);
+            return updated;
+        });
+    };
 
-        adjustModalHeight();
-        window.addEventListener('resize', adjustModalHeight);
+    const handleArrayInput = (field) => (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Förhindra standardbeteendet
+            if (event.target.value.trim()) {
+                setEditedCompany(prev => ({
+                    ...prev,
+                    [field]: [...(prev[field] || []), event.target.value.trim()]
+                }));
+                event.target.value = '';
+            }
+        }
+    };
 
-        return () => {
-            window.removeEventListener('resize', adjustModalHeight);
-        };
-    }, []);
-
-    useEffect(() => {
-        document.body.classList.add('modal-open');
-        return () => {
-            document.body.classList.remove('modal-open');
-        };
-    }, []);
-
-    useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = 'auto';
-        };
-    }, []);
-
-    const handleCommaSeperatedInput = (setValue) => (e) => {
-        const value = e.target.value;
-        setValue(value ? value.split(',').map(item => item.trim()).filter(item => item !== '') : []);
+    const handleDeleteChip = (field, index) => () => {
+        setEditedCompany(prev => ({
+            ...prev,
+            [field]: prev[field].filter((_, i) => i !== index)
+        }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (isSubmitting) {
-            return;
-        }
-        setIsSubmitting(true);
         try {
-            const updatedCompany = {
-                name,
-                orgNumber,
-                streetAddress,
-                area,
-                size: convertEmptyToNull(size),
-                rent: convertEmptyToNull(rent),
-                features,
-                contractEndDate,
-                desiredAreas,
-                desiredSizeMin: convertEmptyToNull(desiredSizeMin),
-                desiredSizeMax: convertEmptyToNull(desiredSizeMax),
-                desiredMaxRent: convertEmptyToNull(desiredMaxRent),
-                desiredFeatures,
+            const dataToSend = {
+                ...editedCompany,
+                features: Array.isArray(editedCompany.features) ? editedCompany.features : [],
+                desiredAreas: Array.isArray(editedCompany.desiredAreas) ? editedCompany.desiredAreas : [],
+                desiredFeatures: Array.isArray(editedCompany.desiredFeatures) ? editedCompany.desiredFeatures : [],
             };
-
+            console.log('Sending data:', JSON.stringify(dataToSend));
             const response = await fetch(`/api/companies/${company.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(updatedCompany),
+                body: JSON.stringify(dataToSend),
             });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Ett okänt fel uppstod');
-            }
-            const data = await response.json();
-            console.log('Success:', data);
-            showConfirmation(`"${name}" har uppdaterats`, null, false); // Add false to hide cancel button
             
-            if (typeof onCompanyUpdated === 'function') {
-                onCompanyUpdated();
+            const responseText = await response.text();
+            console.log('Response text:', responseText);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
             }
-            if (typeof onClose === 'function') {
-                onClose();
+            
+            let updatedCompany;
+            try {
+                updatedCompany = JSON.parse(responseText);
+                console.log('Parsed response:', updatedCompany);
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+                throw new Error('Invalid JSON response from server');
             }
+            
+            onCompanyUpdated(updatedCompany);
+            showNotification('Företaget har uppdaterats');
+            onClose();
         } catch (error) {
-            console.error('Error:', error);
-            showNotification(`Ett fel uppstod när "${name}" skulle uppdateras: ${error.message}`);
-        } finally {
-            setIsSubmitting(false);
+            console.error('Error updating company:', error);
+            showNotification(`Ett fel uppstod vid uppdatering av företaget: ${error.message}`, 'error');
         }
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
+        console.log('handleDelete called');
         showConfirmation(
-            `Är du säker på att du vill radera företaget "${name}"?`,
+            `Är du säker på att du vill ta bort ${company.name}?`,
             async () => {
+                console.log('Confirmation callback triggered');
                 try {
                     const response = await fetch(`/api/companies/${company.id}`, {
                         method: 'DELETE',
                     });
                     if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || 'Ett fel uppstod vid radering av företaget');
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    showNotification(`Företaget "${name}" har raderats`);
-                    if (typeof onCompanyUpdated === 'function') {
-                        onCompanyUpdated();
-                    }
-                    if (typeof onClose === 'function') {
-                        onClose();
-                    }
+                    const data = await response.json();
+                    console.log('Company deleted successfully:', data);
+                    onCompanyUpdated();
+                    showNotification('Företaget har tagits bort', 'success');
+                    onClose();
                 } catch (error) {
                     console.error('Error deleting company:', error);
-                    showNotification(`Ett fel uppstod när "${name}" skulle raderas: ${error.message}`);
+                    showNotification(`Ett fel uppstod vid borttagning av företaget: ${error.message}`, 'error');
                 }
-            },
-            true // Show both "Ja" and "Nej" buttons
+            }
         );
     };
 
-    const convertEmptyToNull = (value) => value === '' ? null : value;
+    const handleOutsideClick = (e) => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
 
     return (
-        <div className={styles.modalOverlay}>
+        <div className={styles.modalOverlay} onClick={handleOutsideClick}>
             <div className={styles.modalContent}>
                 <h2>Redigera företag</h2>
-                <form onSubmit={handleSubmit}>
-                    <div className={styles['form-group']}>
-                        <label htmlFor="name" className={styles['custom-label']}>Företagsnamn</label>
+                <form onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="name">Företagsnamn</label>
                         <input
                             id="name"
+                            name="name"
                             type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            value={editedCompany.name}
+                            onChange={handleInputChange}
                             required
-                            className={styles['custom-input']}
                         />
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label htmlFor="orgNumber" className="custom-label">Organisationsnummer</label>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="orgNumber">Org nummer</label>
                         <input
                             id="orgNumber"
+                            name="orgNumber"
                             type="text"
-                            value={orgNumber}
-                            className="custom-input disabled-input"
-                            disabled
+                            value={editedCompany.orgNumber}
+                            readOnly
+                            style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                         />
-                        <small className="info-text">Organisationsnummer kan inte ändras efter att företaget har skapats.</small>
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label htmlFor="streetAddress" className="custom-label">Gatuadress</label>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="streetAddress">Gatuadress</label>
                         <input
                             id="streetAddress"
+                            name="streetAddress"
                             type="text"
-                            value={streetAddress}
-                            onChange={(e) => setStreetAddress(e.target.value)}
-                            className="custom-input"
+                            value={editedCompany.streetAddress}
+                            onChange={handleInputChange}
                         />
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label htmlFor="area" className="custom-label">Område</label>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="area">Område</label>
                         <input
                             id="area"
+                            name="area"
                             type="text"
-                            value={area}
-                            onChange={(e) => setArea(e.target.value)}
-                            className="custom-input"
+                            value={editedCompany.area}
+                            onChange={handleInputChange}
                         />
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label htmlFor="size" className="custom-label">Storlek (kvm)</label>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="size">Storlek (kvm)</label>
                         <input
                             id="size"
+                            name="size"
                             type="number"
-                            min="0"
-                            value={size}
-                            onChange={(e) => setSize(e.target.value)}
-                            className="custom-input"
+                            value={editedCompany.size || ''}
+                            onChange={handleInputChange}
                         />
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label htmlFor="rent" className="custom-label">Hyra (kr/kvm/år)</label>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="rent">Hyra (kr/kvm/år)</label>
                         <input
                             id="rent"
+                            name="rent"
                             type="number"
-                            value={rent}
-                            onChange={(e) => setRent(e.target.value)}
-                            className="custom-input"
+                            value={editedCompany.rent || ''}
+                            onChange={handleInputChange}
                         />
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label htmlFor="features" className="custom-label">Features (kommaseparerad lista)</label>
-                        <input
-                            id="features"
-                            type="text"
-                            value={(features && Array.isArray(features)) ? features.join(', ') : ''}
-                            onChange={handleCommaSeperatedInput(setFeatures)}
-                            className="custom-input"
+                    <div className={styles.formGroup}>
+                        <label htmlFor="features">Features</label>
+                        <TagInput
+                            tags={editedCompany.features}
+                            setTags={(tags) => setEditedCompany(prev => ({ ...prev, features: tags }))}
+                            placeholder="Skriv en feature och tryck Enter"
                         />
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label htmlFor="contractEndDate" className="custom-label">Avtalstid t.o.m.</label>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="contractEndDate">Avtalstid t.o.m.</label>
                         <input
                             id="contractEndDate"
+                            name="contractEndDate"
                             type="date"
-                            value={contractEndDate}
-                            onChange={(e) => setContractEndDate(e.target.value)}
-                            className="custom-input"
+                            value={editedCompany.contractEndDate ? new Date(editedCompany.contractEndDate).toISOString().split('T')[0] : ''}
+                            onChange={handleInputChange}
                         />
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label htmlFor="desiredAreas" className="custom-label">Önskat område (Kommaseparerad lista)</label>
-                        <input
-                            id="desiredAreas"
-                            type="text"
-                            value={(desiredAreas && Array.isArray(desiredAreas)) ? desiredAreas.join(', ') : ''}
-                            onChange={handleCommaSeperatedInput(setDesiredAreas)}
-                            className="custom-input"
+                    <div className={styles.formGroup}>
+                        <label htmlFor="desiredAreas">Önskade områden</label>
+                        <TagInput
+                            tags={editedCompany.desiredAreas}
+                            setTags={(tags) => setEditedCompany(prev => ({ ...prev, desiredAreas: tags }))}
+                            placeholder="Skriv ett område och tryck Enter"
                         />
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label className="custom-label">Önskad storlek (kvm)</label>
-                        <div className="size-range">
+                    <div className={styles.formGroup}>
+                        <label>Önskad storlek (kvm)</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <input
                                 type="number"
-                                value={desiredSizeMin}
-                                onChange={(e) => setDesiredSizeMin(e.target.value)}
-                                className="custom-input size-input"
+                                name="desiredSizeMin"
+                                value={editedCompany.desiredSizeMin || ''}
+                                onChange={handleInputChange}
                                 placeholder="Min"
+                                style={{ width: '45%' }}
                             />
-                            <span className="size-separator">-</span>
+                            <span style={{ fontSize: '14px' }}>-</span>
                             <input
                                 type="number"
-                                value={desiredSizeMax}
-                                onChange={(e) => setDesiredSizeMax(e.target.value)}
-                                className="custom-input size-input"
+                                name="desiredSizeMax"
+                                value={editedCompany.desiredSizeMax || ''}
+                                onChange={handleInputChange}
                                 placeholder="Max"
+                                style={{ width: '45%' }}
                             />
                         </div>
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label htmlFor="desiredMaxRent" className="custom-label">Önskad maxhyra (kr/kvm/år)</label>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="desiredMaxRent">Önskad maxhyra (kr/kvm/år)</label>
                         <input
                             id="desiredMaxRent"
+                            name="desiredMaxRent"
                             type="number"
-                            value={desiredMaxRent}
-                            onChange={(e) => setDesiredMaxRent(e.target.value)}
-                            className="custom-input"
+                            value={editedCompany.desiredMaxRent || ''}
+                            onChange={handleInputChange}
                         />
                     </div>
-                    <div className="form-group custom-form-group">
-                        <label htmlFor="desiredFeatures" className="custom-label">Önskade features (kommaseparerad lista)</label>
-                        <input
-                            id="desiredFeatures"
-                            type="text"
-                            value={(desiredFeatures && Array.isArray(desiredFeatures)) ? desiredFeatures.join(', ') : ''}
-                            onChange={handleCommaSeperatedInput(setDesiredFeatures)}
-                            className="custom-input"
+                    <div className={styles.formGroup}>
+                        <label htmlFor="desiredFeatures">Önskade features</label>
+                        <TagInput
+                            tags={editedCompany.desiredFeatures}
+                            setTags={(tags) => setEditedCompany(prev => ({ ...prev, desiredFeatures: tags }))}
+                            placeholder="Skriv en önskad feature och tryck Enter"
                         />
                     </div>
                     <div style={{
@@ -289,56 +291,19 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                     }}>
                         <button 
                             type="submit" 
-                            disabled={isSubmitting}
-                            style={{
-                                padding: '8px 16px',
-                                width: '140px',
-                                fontSize: '14px',
-                                fontWeight: 'normal',
-                                textAlign: 'center',
-                                backgroundColor: '#4CAF50',
-                                color: 'white',
-                                border: '1px solid #4CAF50',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                opacity: isSubmitting ? 0.5 : 1
-                            }}
+                            onClick={handleSubmit}
                         >
-                            {isSubmitting ? 'Uppdaterar...' : 'Uppdatera företag'}
+                            Spara ändringar
                         </button>
                         <button 
                             type="button" 
                             onClick={handleDelete}
-                            style={{
-                                padding: '8px 16px',
-                                width: '140px',
-                                fontSize: '14px',
-                                fontWeight: 'normal',
-                                textAlign: 'center',
-                                backgroundColor: '#f44336',
-                                color: 'white',
-                                border: '1px solid #f44336',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                            }}
                         >
-                            Radera företag
+                            Ta bort företag
                         </button>
                         <button 
                             type="button" 
                             onClick={onClose}
-                            style={{
-                                padding: '8px 16px',
-                                width: '140px',
-                                fontSize: '14px',
-                                fontWeight: 'normal',
-                                textAlign: 'center',
-                                backgroundColor: '#f1f1f1',
-                                color: '#333',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                            }}
                         >
                             Avbryt
                         </button>

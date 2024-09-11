@@ -1,57 +1,32 @@
-import { useState, useEffect } from 'react';
-import CompanyForm from '../components/CompanyForm';
+import React, { useState } from 'react';
 import CompanyList from '../components/CompanyList';
-import { ConfirmationProvider } from '../components/ConfirmationContext';
-import Confirmation from '../components/Confirmation';
-import Notification from '../components/Notification';
+import CompanyForm from '../components/CompanyForm';
 import { NotificationProvider } from '../components/NotificationContext';
+import { ConfirmationProvider } from '../components/ConfirmationContext';
+import Notification from '../components/Notification';
+import Logo from '../components/Logo';
 
 export default function Home() {
-    const [companies, setCompanies] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    useEffect(() => {
-        fetchCompanies();
-    }, []);
+  const handleCompanyAdded = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
-    const fetchCompanies = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/companies');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            setCompanies(data);
-        } catch (error) {
-            console.error('Error fetching companies:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleCompanyAdded = async () => {
-        await fetchCompanies();
-    };
-
-    return (
-        <NotificationProvider>
-            <ConfirmationProvider>
-                <div>
-                    <div className="logo">
-                        <span className="locality" style={{color: 'darkblue'}}>locality</span>
-                        <span className="matcher">matcher</span>
-                    </div>
-                    <CompanyForm onCompanyAdded={handleCompanyAdded} />
-                    {isLoading ? (
-                        <p>Laddar företag...</p>
-                    ) : (
-                        <CompanyList companies={companies} />
-                    )}
-                    <Confirmation />
-                    <Notification />
-                </div>
-            </ConfirmationProvider>
-        </NotificationProvider>
-    );
+  return (
+    <NotificationProvider>
+      <ConfirmationProvider>
+        <div style={{ padding: '20px' }}>
+          <header style={{ marginBottom: '40px' }}>
+            <Logo />
+          </header>
+          <main>
+            <CompanyForm onCompanyAdded={handleCompanyAdded} />
+            <CompanyList key={refreshTrigger} />
+          </main>
+          <Notification />
+        </div>
+      </ConfirmationProvider>
+    </NotificationProvider>
+  );
 }

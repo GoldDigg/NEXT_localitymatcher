@@ -2,29 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { useConfirmation } from './ConfirmationContext';
 import { debounce } from 'lodash';
 import { useNotification } from './NotificationContext';
-
-// Lägg till denna enkla Chip-komponent
-const Chip = ({ label, onDelete }) => (
-  <span style={{
-    display: 'inline-block',
-    padding: '2px 8px',
-    margin: '2px',
-    backgroundColor: '#e0e0e0',
-    borderRadius: '16px',
-    fontSize: '14px'
-  }}>
-    {label}
-    <button onClick={onDelete} style={{
-      marginLeft: '4px',
-      border: 'none',
-      background: 'none',
-      cursor: 'pointer',
-      fontSize: '14px'
-    }}>
-      ×
-    </button>
-  </span>
-);
+import { format } from 'date-fns'; // Lägg till denna import överst i filen
+import TagInput from './TagInput';
 
 function CompanyForm({ onCompanyAdded }) {
     const { showConfirmation } = useConfirmation();
@@ -51,6 +30,9 @@ function CompanyForm({ onCompanyAdded }) {
         try {
             const response = await fetch(`/api/check_org_number/${orgNumber}`);
             console.log('API response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const data = await response.json();
             console.log('API response data:', data);
             return !data.exists;
@@ -62,21 +44,22 @@ function CompanyForm({ onCompanyAdded }) {
 
     const debouncedValidate = useCallback(
         debounce(async (value) => {
+            console.log('Validating:', value);
             const isValid = await validateOrgNumber(value);
+            console.log('Is valid:', isValid);
             setOrgNumberError(isValid ? '' : 'Organisationsnumret finns redan');
         }, 300),
         []
     );
 
-    const handleCommaSeperatedInput = (setValue) => (e) => {
-        const value = e.target.value;
-        setValue(value ? value.split(',').map(item => item.trim()).filter(item => item !== '') : []);
-    };
-
     const handleOrgNumberChange = (e) => {
         const value = e.target.value;
         setOrgNumber(value);
-        debouncedValidate(value);
+        if (value.trim() !== '') {
+            debouncedValidate(value);
+        } else {
+            setOrgNumberError('');
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -92,21 +75,28 @@ function CompanyForm({ onCompanyAdded }) {
                 return;
             }
 
+            const formattedDate = contractEndDate ? format(new Date(contractEndDate), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx") : null;
+            
             const companyData = {
                 name,
                 orgNumber,
                 streetAddress,
                 area,
-                size: size ? parseFloat(size) : null,
-                rent: rent ? parseFloat(rent) : null,
+                size: size ? parseInt(size) : null,
+                rent: rent ? parseInt(rent) : null,
                 features,
-                contractEndDate: contractEndDate || null,
+                contractEndDate: formattedDate,
                 desiredAreas,
-                desiredSizeMin: desiredSizeMin ? parseFloat(desiredSizeMin) : null,
-                desiredSizeMax: desiredSizeMax ? parseFloat(desiredSizeMax) : null,
-                desiredMaxRent: desiredMaxRent ? parseFloat(desiredMaxRent) : null,
+                desiredSizeMin: desiredSizeMin ? parseInt(desiredSizeMin) : null,
+                desiredSizeMax: desiredSizeMax ? parseInt(desiredSizeMax) : null,
+                desiredMaxRent: desiredMaxRent ? parseInt(desiredMaxRent) : null,
                 desiredFeatures
             };
+
+            console.log('Sending company data:', companyData);
+            console.log('Features:', companyData.features);
+            console.log('Desired Areas:', companyData.desiredAreas);
+            console.log('Desired Features:', companyData.desiredFeatures);
 
             const response = await fetch('/api/companies', {
                 method: 'POST',
@@ -117,11 +107,11 @@ function CompanyForm({ onCompanyAdded }) {
             });
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Ett okänt fel uppstod');
+                throw new Error(JSON.stringify(errorData));
             }
             const data = await response.json();
-            console.log('Success:', data);
-            showNotification(`"${name}" är nu tillagd`);
+            console.log('Company created:', data);
+            showNotification(`"${data.name}" har lagts till`);
             
             // Reset all form fields
             setName('');
@@ -140,24 +130,15 @@ function CompanyForm({ onCompanyAdded }) {
             setDesiredFeatures([]); // Reset desiredFeatures array
             setFormSubmitCount(prev => prev + 1);
 
-            await onCompanyAdded();
+            if (onCompanyAdded) {
+                onCompanyAdded(data);
+            }
         } catch (error) {
             console.error('Error:', error);
-            showNotification(`Ett fel uppstod när "${name}" skulle läggas till: ${error.message}`, 'error');
+            showNotification(`Ett fel uppstod: ${error.message}`, 'error');
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const handleArrayInput = (setValue) => (event) => {
-        if (event.key === 'Enter' && event.target.value.trim()) {
-            setValue(prev => [...prev, event.target.value.trim()]);
-            event.target.value = '';
-        }
-    };
-
-    const handleDeleteChip = (setValue, index) => () => {
-        setValue(prev => prev.filter((_, i) => i !== index));
     };
 
     return (
@@ -229,25 +210,13 @@ function CompanyForm({ onCompanyAdded }) {
                         className="custom-input"
                     />
                 </div>
-                <div className="form-group custom-form-group">
-                    <label htmlFor="features" className="custom-label">Features (kommaseparerad lista)</label>
-                    <input
-                        id="features"
-                        type="text"
-                        onKeyDown={handleArrayInput(setFeatures)}
-                        className="custom-input"
-                        placeholder="Skriv och tryck Enter för att lägga till"
-                        key={`features-${formSubmitCount}`}
+                <div className="form-group">
+                    <label htmlFor="features">Features</label>
+                    <TagInput
+                        tags={features}
+                        setTags={setFeatures}
+                        placeholder="Skriv en feature och tryck Enter"
                     />
-                    <div>
-                        {features.map((feature, index) => (
-                            <Chip
-                                key={index}
-                                label={feature}
-                                onDelete={handleDeleteChip(setFeatures, index)}
-                            />
-                        ))}
-                    </div>
                 </div>
                 <div className="form-group custom-form-group">
                     <label htmlFor="contractEndDate" className="custom-label">Avtalstid t.o.m.</label>
@@ -259,25 +228,13 @@ function CompanyForm({ onCompanyAdded }) {
                         className="custom-input"
                     />
                 </div>
-                <div className="form-group custom-form-group">
-                    <label htmlFor="desiredAreas" className="custom-label">Önskat område (Kommaseparerad lista)</label>
-                    <input
-                        id="desiredAreas"
-                        type="text"
-                        onKeyDown={handleArrayInput(setDesiredAreas)}
-                        className="custom-input"
-                        placeholder="Skriv och tryck Enter för att lägga till"
-                        key={`desiredAreas-${formSubmitCount}`}
+                <div className="form-group">
+                    <label htmlFor="desiredAreas">Önskade områden</label>
+                    <TagInput
+                        tags={desiredAreas}
+                        setTags={setDesiredAreas}
+                        placeholder="Skriv ett område och tryck Enter"
                     />
-                    <div>
-                        {desiredAreas.map((area, index) => (
-                            <Chip
-                                key={index}
-                                label={area}
-                                onDelete={handleDeleteChip(setDesiredAreas, index)}
-                            />
-                        ))}
-                    </div>
                 </div>
                 <div className="form-group custom-form-group">
                     <label className="custom-label">Önskad storlek (kvm)</label>
@@ -309,25 +266,13 @@ function CompanyForm({ onCompanyAdded }) {
                         className="custom-input"
                     />
                 </div>
-                <div className="form-group custom-form-group">
-                    <label htmlFor="desiredFeatures" className="custom-label">Önskade features (kommaseparerad lista)</label>
-                    <input
-                        id="desiredFeatures"
-                        type="text"
-                        onKeyDown={handleArrayInput(setDesiredFeatures)}
-                        className="custom-input"
-                        placeholder="Skriv och tryck Enter för att lägga till"
-                        key={`desiredFeatures-${formSubmitCount}`}
+                <div className="form-group">
+                    <label htmlFor="desiredFeatures">Önskade features</label>
+                    <TagInput
+                        tags={desiredFeatures}
+                        setTags={setDesiredFeatures}
+                        placeholder="Skriv en önskad feature och tryck Enter"
                     />
-                    <div>
-                        {desiredFeatures.map((feature, index) => (
-                            <Chip
-                                key={index}
-                                label={feature}
-                                onDelete={handleDeleteChip(setDesiredFeatures, index)}
-                            />
-                        ))}
-                    </div>
                 </div>
                 <div style={{display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px'}}>
                     <button 
