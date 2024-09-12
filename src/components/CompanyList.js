@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import CompanyModal from './CompanyModal';
 import { useNotification } from './NotificationContext';
@@ -101,20 +103,20 @@ function CompanyList() {
     };
 
     const handleCompanyUpdated = (updatedCompany) => {
-        if (updatedCompany) {
+        if (updatedCompany === null) {
+            // Företaget har raderats
+            setCompanies(prevCompanies => 
+                prevCompanies.filter(company => company.id !== selectedCompany.id)
+            );
+        } else if (updatedCompany) {
+            // Företaget har uppdaterats
             setCompanies(prevCompanies => 
                 prevCompanies.map(company => 
                     company.id === updatedCompany.id ? updatedCompany : company
                 )
             );
-        } else {
-            // If updatedCompany is null, it means the company was deleted
-            setCompanies(prevCompanies => 
-                prevCompanies.filter(company => company.id !== selectedCompany.id)
-            );
         }
         setSelectedCompany(null);
-        triggerRefresh();
     };
 
     return (

@@ -1,6 +1,8 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { useConfirmation } from '../components/ConfirmationContext';
-import { useNotification } from '../components/NotificationContext';
+import { useConfirmation } from './ConfirmationContext';
+import { useNotification } from './NotificationContext';
 import TagInput from './TagInput';
 import styles from './CompanyModal.module.css';
 
@@ -44,15 +46,15 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setEditedCompany(prev => {
-            let updatedValue = value;
-            if (name === 'contractEndDate') {
-                updatedValue = value ? new Date(value).toISOString() : null;
-            }
-            const updated = { ...prev, [name]: updatedValue };
-            console.log('Updated state:', updated);
-            return updated;
-        });
+        if (name === 'area') {
+            setEditedCompany(prev => ({
+                ...prev,
+                [name]: value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+            }));
+        } else {
+            // Hantera andra fält som vanligt
+            setEditedCompany(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleArrayInput = (field) => (event) => {
@@ -83,6 +85,11 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                 features: Array.isArray(editedCompany.features) ? editedCompany.features : [],
                 desiredAreas: Array.isArray(editedCompany.desiredAreas) ? editedCompany.desiredAreas : [],
                 desiredFeatures: Array.isArray(editedCompany.desiredFeatures) ? editedCompany.desiredFeatures : [],
+                size: editedCompany.size ? parseFloat(editedCompany.size) : null,
+                rent: editedCompany.rent ? parseFloat(editedCompany.rent) : null,
+                desiredSizeMin: editedCompany.desiredSizeMin ? parseFloat(editedCompany.desiredSizeMin) : null,
+                desiredSizeMax: editedCompany.desiredSizeMax ? parseFloat(editedCompany.desiredSizeMax) : null,
+                desiredMaxRent: editedCompany.desiredMaxRent ? parseFloat(editedCompany.desiredMaxRent) : null,
             };
             console.log('Sending data:', JSON.stringify(dataToSend));
             const response = await fetch(`/api/companies/${company.id}`, {
@@ -93,24 +100,16 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                 body: JSON.stringify(dataToSend),
             });
             
-            const responseText = await response.text();
-            console.log('Response text:', responseText);
-            
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
             
-            let updatedCompany;
-            try {
-                updatedCompany = JSON.parse(responseText);
-                console.log('Parsed response:', updatedCompany);
-            } catch (error) {
-                console.error('Error parsing JSON:', error);
-                throw new Error('Invalid JSON response from server');
-            }
+            const updatedCompany = await response.json();
+            console.log('Updated company:', updatedCompany);
             
             onCompanyUpdated(updatedCompany);
-            showNotification('Företaget har uppdaterats');
+            showNotification('Företaget har uppdaterats', 'success');
             onClose();
         } catch (error) {
             console.error('Error updating company:', error);
@@ -121,7 +120,7 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
     const handleDelete = () => {
         console.log('handleDelete called');
         showConfirmation(
-            `Är du säker på att du vill ta bort ${company.name}?`,
+            `Är du säker på att du vill radera ${company.name}?`,
             async () => {
                 console.log('Confirmation callback triggered');
                 try {
@@ -133,12 +132,12 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                     }
                     const data = await response.json();
                     console.log('Company deleted successfully:', data);
-                    onCompanyUpdated();
-                    showNotification('Företaget har tagits bort', 'success');
+                    onCompanyUpdated(null); // Skicka null för att indikera borttagning
+                    showNotification('Företaget har raderats', 'success');
                     onClose();
                 } catch (error) {
                     console.error('Error deleting company:', error);
-                    showNotification(`Ett fel uppstod vid borttagning av företaget: ${error.message}`, 'error');
+                    showNotification(`Ett fel uppstod vid radering av företaget: ${error.message}`, 'error');
                 }
             }
         );
@@ -150,11 +149,17 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
         }
     };
 
+    const handleInputKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Förhindra standardbeteendet för Enter
+        }
+    };
+
     return (
         <div className={styles.modalOverlay} onClick={handleOutsideClick}>
             <div className={styles.modalContent}>
                 <h2>Redigera företag</h2>
-                <form onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <form onSubmit={handleSubmit}>
                     <div className={styles.formGroup}>
                         <label htmlFor="name">Företagsnamn</label>
                         <input
@@ -185,6 +190,7 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                             type="text"
                             value={editedCompany.streetAddress}
                             onChange={handleInputChange}
+                            onKeyDown={handleInputKeyDown}
                         />
                     </div>
                     <div className={styles.formGroup}>
@@ -299,7 +305,7 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                             type="button" 
                             onClick={handleDelete}
                         >
-                            Ta bort företag
+                            Radera Företag
                         </button>
                         <button 
                             type="button" 

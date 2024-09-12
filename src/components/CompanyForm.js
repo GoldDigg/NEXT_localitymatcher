@@ -1,9 +1,12 @@
+'use client'; // Lägg till denna rad om det är en Client Component
+
 import React, { useState, useCallback } from 'react';
 import { useConfirmation } from './ConfirmationContext';
 import { debounce } from 'lodash';
 import { useNotification } from './NotificationContext';
 import { format } from 'date-fns'; // Lägg till denna import överst i filen
 import TagInput from './TagInput';
+import { useRouter } from 'next/navigation'; // Uppdatera från 'next/router' om du använder den
 
 function CompanyForm({ onCompanyAdded }) {
     const { showConfirmation } = useConfirmation();
@@ -24,27 +27,40 @@ function CompanyForm({ onCompanyAdded }) {
     const [desiredFeatures, setDesiredFeatures] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formSubmitCount, setFormSubmitCount] = useState(0);
+    const router = useRouter();
+
+    const validateOrgNumberFormat = (orgNumber) => {
+        const regex = /^\d{6}-\d{4}$/;
+        return regex.test(orgNumber);
+    };
 
     const validateOrgNumber = async (orgNumber) => {
         console.log('Validating org number:', orgNumber);
+        if (!validateOrgNumberFormat(orgNumber)) {
+            return false;
+        }
         try {
-            const response = await fetch(`/api/check_org_number/${orgNumber}`);
+            const response = await fetch(`/api/check_org_number?orgNumber=${orgNumber}`);
             console.log('API response status:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
             console.log('API response data:', data);
-            return !data.exists;
+            return !data.exists; // Returnera true om organisationsnumret INTE existerar
         } catch (error) {
             console.error('Error validating org number:', error);
-            return false;
+            return false; // Anta att det är ett fel och returnera false
         }
     };
 
     const debouncedValidate = useCallback(
         debounce(async (value) => {
             console.log('Validating:', value);
+            if (!validateOrgNumberFormat(value)) {
+                setOrgNumberError('Ogiltigt format. Använd XXXXXX-XXXX');
+                return;
+            }
             const isValid = await validateOrgNumber(value);
             console.log('Is valid:', isValid);
             setOrgNumberError(isValid ? '' : 'Organisationsnumret finns redan');
@@ -62,6 +78,32 @@ function CompanyForm({ onCompanyAdded }) {
         }
     };
 
+    const capitalizeFirstLetter = (string) => {
+        return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+    };
+
+    const handleAreaChange = (e) => {
+        setArea(capitalizeFirstLetter(e.target.value));
+    };
+
+    const handleFeaturesTags = (newTags) => {
+        setFeatures(newTags.map(capitalizeFirstLetter));
+    };
+
+    const handleDesiredAreasTags = (newTags) => {
+        setDesiredAreas(newTags.map(capitalizeFirstLetter));
+    };
+
+    const handleDesiredFeaturesTags = (newTags) => {
+        setDesiredFeatures(newTags.map(capitalizeFirstLetter));
+    };
+
+    const handleInputKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Förhindra standardbeteendet för Enter
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isSubmitting || orgNumberError) {
@@ -69,9 +111,12 @@ function CompanyForm({ onCompanyAdded }) {
         }
         setIsSubmitting(true);
         try {
+            console.log('Validating org number before submission:', orgNumber);
             const isValid = await validateOrgNumber(orgNumber);
+            console.log('Org number validation result:', isValid);
             if (!isValid) {
                 setOrgNumberError('Organisationsnumret finns redan');
+                setIsSubmitting(false);
                 return;
             }
 
@@ -167,6 +212,8 @@ function CompanyForm({ onCompanyAdded }) {
                         required
                         className={`custom-input ${orgNumberError ? 'error' : ''}`}
                         placeholder="XXXXXX-XXXX"
+                        pattern="\d{6}-\d{4}"
+                        title="Ange organisationsnummer i formatet XXXXXX-XXXX"
                     />
                     {orgNumberError && <div className="error-message">{orgNumberError}</div>}
                 </div>
@@ -177,6 +224,7 @@ function CompanyForm({ onCompanyAdded }) {
                         type="text"
                         value={streetAddress}
                         onChange={(e) => setStreetAddress(e.target.value)}
+                        onKeyDown={handleInputKeyDown}
                         className="custom-input"
                     />
                 </div>
@@ -186,7 +234,7 @@ function CompanyForm({ onCompanyAdded }) {
                         id="area"
                         type="text"
                         value={area}
-                        onChange={(e) => setArea(e.target.value)}
+                        onChange={handleAreaChange}
                         className="custom-input"
                     />
                 </div>
@@ -214,7 +262,7 @@ function CompanyForm({ onCompanyAdded }) {
                     <label htmlFor="features">Features</label>
                     <TagInput
                         tags={features}
-                        setTags={setFeatures}
+                        setTags={handleFeaturesTags}
                         placeholder="Skriv en feature och tryck Enter"
                     />
                 </div>
@@ -232,7 +280,7 @@ function CompanyForm({ onCompanyAdded }) {
                     <label htmlFor="desiredAreas">Önskade områden</label>
                     <TagInput
                         tags={desiredAreas}
-                        setTags={setDesiredAreas}
+                        setTags={handleDesiredAreasTags}
                         placeholder="Skriv ett område och tryck Enter"
                     />
                 </div>
@@ -270,7 +318,7 @@ function CompanyForm({ onCompanyAdded }) {
                     <label htmlFor="desiredFeatures">Önskade features</label>
                     <TagInput
                         tags={desiredFeatures}
-                        setTags={setDesiredFeatures}
+                        setTags={handleDesiredFeaturesTags}
                         placeholder="Skriv en önskad feature och tryck Enter"
                     />
                 </div>

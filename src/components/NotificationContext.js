@@ -1,17 +1,19 @@
-import React, { createContext, useState, useContext } from 'react';
+'use client';
+
+import React, { createContext, useState, useContext, useCallback } from 'react';
 
 const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
     const [notificationState, setNotificationState] = useState({ isOpen: false, message: '' });
 
-    const showNotification = (message) => {
+    const showNotification = useCallback((message) => {
         setNotificationState({ isOpen: true, message });
-    };
+    }, []);
 
-    const hideNotification = () => {
+    const hideNotification = useCallback(() => {
         setNotificationState({ isOpen: false, message: '' });
-    };
+    }, []);
 
     return (
         <NotificationContext.Provider value={{ showNotification, hideNotification, notificationState }}>
