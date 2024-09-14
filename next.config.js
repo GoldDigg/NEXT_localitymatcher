@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    appDir: true,
+    // Ta bort 'appDir' härifrån om det finns
   },
+  // Lägg till andra konfigurationer här om det behövs
 }
 
 module.exports = nextConfig

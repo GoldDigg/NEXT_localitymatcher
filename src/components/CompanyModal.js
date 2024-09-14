@@ -157,7 +157,7 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
 
     return (
         <div className={styles.modalOverlay} onClick={handleOutsideClick}>
-            <div className={styles.modalContent}>
+            <div className={`${styles.modalContent} card`}>
                 <h2>Redigera företag</h2>
                 <form onSubmit={handleSubmit}>
                     <div className={styles.formGroup}>
@@ -289,26 +289,24 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                             placeholder="Skriv en önskad feature och tryck Enter"
                         />
                     </div>
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        gap: '10px',
-                        marginTop: '20px'
-                    }}>
+                    <div className={styles.buttonGroup}>
                         <button 
                             type="submit" 
+                            className={`btn ${styles.saveBtn}`}
                             onClick={handleSubmit}
                         >
                             Spara ändringar
                         </button>
                         <button 
                             type="button" 
+                            className={`btn ${styles.deleteBtn}`}
                             onClick={handleDelete}
                         >
                             Radera Företag
                         </button>
                         <button 
                             type="button" 
+                            className={`btn ${styles.cancelBtn}`}
                             onClick={onClose}
                         >
                             Avbryt

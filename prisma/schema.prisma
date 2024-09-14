@@ -23,3 +23,16 @@ model Company {
   desiredMaxRent  Float?
   desiredFeatures String[]
 }
+
+model Property {
+  id             Int      @id @default(autoincrement())
+  address        String
+  size           Float
+  area           String
+  features       String[]
+  rent           Float
+  availableFrom  DateTime
+  propertyOwner  String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
