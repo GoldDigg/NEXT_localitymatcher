@@ -4,21 +4,29 @@ import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
 
+const areas = ['Centrum', 'Väster', 'Öster', 'Söder', 'Norr', 'Industriområdet', 'Hamnen'];
+const features = ['Parkering', 'Fiber', 'Konferensrum', 'Lunchrum', 'Gym', 'Lager', 'Lastbrygga', 'Hiss', 'Handikappanpassat'];
+
 function generateRandomCompany() {
+    const desiredAreas = faker.helpers.arrayElements(areas, { min: 1, max: 3 });
+    const desiredFeatures = faker.helpers.arrayElements(features, { min: 2, max: 5 });
+    const desiredSizeMin = faker.number.int({ min: 50, max: 500 });
+    const desiredSizeMax = faker.number.int({ min: desiredSizeMin + 1, max: 1000 });
+
     return {
         name: faker.company.name(),
         orgNumber: faker.string.numeric(10),
         streetAddress: faker.location.streetAddress(),
-        area: faker.location.city(),
+        area: faker.helpers.arrayElement(areas),
         size: faker.number.int({ min: 50, max: 1000 }),
         rent: faker.number.int({ min: 500, max: 2000 }),
-        features: [faker.word.adjective(), faker.word.adjective()],
+        features: faker.helpers.arrayElements(features, { min: 1, max: 4 }),
         contractEndDate: faker.date.future(),
-        desiredAreas: [faker.location.city(), faker.location.city()],
-        desiredSizeMin: faker.number.int({ min: 50, max: 500 }),
-        desiredSizeMax: faker.number.int({ min: 501, max: 1000 }),
+        desiredAreas,
+        desiredSizeMin,
+        desiredSizeMax,
         desiredMaxRent: faker.number.int({ min: 500, max: 2000 }),
-        desiredFeatures: [faker.word.adjective(), faker.word.adjective()],
+        desiredFeatures,
     };
 }
 
@@ -26,8 +34,8 @@ function generateRandomProperty() {
     return {
         address: faker.location.streetAddress(),
         size: faker.number.int({ min: 50, max: 1000 }),
-        area: faker.location.city(),
-        features: [faker.word.adjective(), faker.word.adjective()],
+        area: faker.helpers.arrayElement(areas),
+        features: faker.helpers.arrayElements(features, { min: 1, max: 6 }),
         rent: faker.number.int({ min: 500, max: 2000 }),
         availableFrom: faker.date.future(),
         propertyOwner: faker.company.name(),
@@ -52,5 +60,7 @@ export async function POST() {
     } catch (error) {
         console.error('Server error:', error);
         return NextResponse.json({ message: error.message || 'Internal server error' }, { status: 500 });
+    } finally {
+        await prisma.$disconnect();
     }
 }

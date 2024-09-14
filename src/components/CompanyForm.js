@@ -294,21 +294,30 @@ function CompanyForm({ onCompanyAdded }) {
                 </div>
                 <div className="form-group custom-form-group">
                     <label className="custom-label">Önskad storlek (kvm)</label>
-                    <div className="size-range">
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                    }}>
                         <input
                             type="number"
                             value={desiredSizeMin}
                             onChange={(e) => setDesiredSizeMin(e.target.value)}
-                            className="custom-input size-input"
+                            className="custom-input"
                             placeholder="Min"
+                            style={{ flex: 1 }}
                         />
-                        <span className="size-separator">-</span>
+                        <span style={{ 
+                            fontSize: '20px', 
+                            fontWeight: 'bold' 
+                        }}>-</span>
                         <input
                             type="number"
                             value={desiredSizeMax}
                             onChange={(e) => setDesiredSizeMax(e.target.value)}
-                            className="custom-input size-input"
+                            className="custom-input"
                             placeholder="Max"
+                            style={{ flex: 1 }}
                         />
                     </div>
                 </div>

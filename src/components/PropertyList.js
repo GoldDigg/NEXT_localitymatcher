@@ -13,12 +13,12 @@ function PropertyList() {
         try {
             const response = await fetch('/api/properties');
             if (!response.ok) {
-                throw new Error('Failed to fetch properties');
+                throw new Error('Failed to fetch locals');
             }
             const data = await response.json();
             setProperties(data);
         } catch (error) {
-            console.error('Error fetching properties:', error);
+            console.error('Error fetching locals:', error);
         }
     };
 
@@ -36,10 +36,10 @@ function PropertyList() {
 
     const handlePropertyUpdated = (updatedProperty) => {
         if (updatedProperty === null) {
-            // Fastigheten har raderats
+            // Lokalen har raderats
             setProperties(properties.filter(p => p.id !== selectedProperty.id));
         } else {
-            // Fastigheten har uppdaterats
+            // Lokalen har uppdaterats
             setProperties(properties.map(p => p.id === updatedProperty.id ? updatedProperty : p));
         }
         setSelectedProperty(null);
@@ -47,7 +47,7 @@ function PropertyList() {
 
     return (
         <div className="property-list">
-            <h2>Fastigheter</h2>
+            <h2>Lokaler</h2>
             {properties.map((property) => (
                 <div key={`property-${property.id}`} className="property-item" onClick={() => handlePropertyClick(property)}>
                     {property.address}

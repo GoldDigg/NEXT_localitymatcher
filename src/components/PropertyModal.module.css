@@ -9,6 +9,7 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    overflow-y: auto; /* Lägg till denna rad */
 }
 
 .modalContent {
@@ -20,6 +21,7 @@
     padding: 20px;
     max-height: 90vh;
     overflow-y: auto;
+    margin: 20px 0; /* Lägg till denna rad för att ge utrymme ovanför och under modalen */
 }
 
 .modalContent h2 {
