@@ -37,6 +37,7 @@ function CompanyForm({ onCompanyAdded }) {
     const validateOrgNumber = async (orgNumber) => {
         console.log('Validating org number:', orgNumber);
         if (!validateOrgNumberFormat(orgNumber)) {
+            console.log('Invalid format');
             return false;
         }
         try {
@@ -47,7 +48,14 @@ function CompanyForm({ onCompanyAdded }) {
             }
             const data = await response.json();
             console.log('API response data:', data);
-            return !data.exists; // Returnera true om organisationsnumret INTE existerar
+            
+            // Kontrollera om 'exists' finns i svaret och är en boolean
+            if (typeof data.exists === 'boolean') {
+                return !data.exists; // Returnera true om organisationsnumret INTE existerar
+            } else {
+                console.error('Unexpected API response format:', data);
+                return false; // Anta att det är ett fel och returnera false
+            }
         } catch (error) {
             console.error('Error validating org number:', error);
             return false; // Anta att det är ett fel och returnera false

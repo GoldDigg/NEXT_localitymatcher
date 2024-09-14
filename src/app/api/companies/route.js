@@ -4,12 +4,14 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function GET() {
+    console.log('Attempting to fetch companies');
     try {
         const companies = await prisma.company.findMany();
+        console.log('Companies fetched:', companies);
         return NextResponse.json(companies);
     } catch (error) {
         console.error('Error fetching companies:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
 
