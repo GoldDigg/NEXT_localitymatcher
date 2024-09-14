@@ -3,37 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useConfirmation } from './ConfirmationContext';
 import { useNotification } from './NotificationContext';
-import TagInput from './TagInput';
 import styles from './CompanyModal.module.css';
 
-const Chip = ({ label, onDelete }) => (
-  <span style={{
-    display: 'inline-block',
-    padding: '2px 8px',
-    margin: '2px',
-    backgroundColor: '#e0e0e0',
-    borderRadius: '16px',
-    fontSize: '14px'
-  }}>
-    {label}
-    <button onClick={onDelete} style={{
-      marginLeft: '4px',
-      border: 'none',
-      background: 'none',
-      cursor: 'pointer',
-      fontSize: '14px'
-    }}>
-      ×
-    </button>
-  </span>
-);
-
 function CompanyModal({ company, onClose, onCompanyUpdated }) {
-    console.log('CompanyModal rendering with company:', company);
     const [editedCompany, setEditedCompany] = useState(company);
     const { showConfirmation } = useConfirmation();
-    console.log('showConfirmation:', showConfirmation);
     const { showNotification } = useNotification();
+    const [newTag, setNewTag] = useState('');
 
     useEffect(() => {
         setEditedCompany({
@@ -46,31 +22,25 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        if (name === 'area') {
+        setEditedCompany(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleTagInputChange = (e) => {
+        setNewTag(e.target.value);
+    };
+
+    const handleTagInputKeyDown = (field) => (e) => {
+        if (e.key === 'Enter' && newTag.trim()) {
+            e.preventDefault();
             setEditedCompany(prev => ({
                 ...prev,
-                [name]: value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+                [field]: [...prev[field], newTag.trim()]
             }));
-        } else {
-            // Hantera andra fält som vanligt
-            setEditedCompany(prev => ({ ...prev, [name]: value }));
+            setNewTag('');
         }
     };
 
-    const handleArrayInput = (field) => (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault(); // Förhindra standardbeteendet
-            if (event.target.value.trim()) {
-                setEditedCompany(prev => ({
-                    ...prev,
-                    [field]: [...(prev[field] || []), event.target.value.trim()]
-                }));
-                event.target.value = '';
-            }
-        }
-    };
-
-    const handleDeleteChip = (field, index) => () => {
+    const handleDeleteTag = (field, index) => {
         setEditedCompany(prev => ({
             ...prev,
             [field]: prev[field].filter((_, i) => i !== index)
@@ -82,9 +52,9 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
         try {
             const dataToSend = {
                 ...editedCompany,
-                features: Array.isArray(editedCompany.features) ? editedCompany.features : [],
-                desiredAreas: Array.isArray(editedCompany.desiredAreas) ? editedCompany.desiredAreas : [],
-                desiredFeatures: Array.isArray(editedCompany.desiredFeatures) ? editedCompany.desiredFeatures : [],
+                features: editedCompany.features || [],
+                desiredAreas: editedCompany.desiredAreas || [],
+                desiredFeatures: editedCompany.desiredFeatures || [],
                 size: editedCompany.size ? parseFloat(editedCompany.size) : null,
                 rent: editedCompany.rent ? parseFloat(editedCompany.rent) : null,
                 desiredSizeMin: editedCompany.desiredSizeMin ? parseFloat(editedCompany.desiredSizeMin) : null,
@@ -145,7 +115,10 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
 
     const handleOutsideClick = (e) => {
         if (e.target === e.currentTarget) {
-            onClose();
+            // Lägg till en bekräftelsedialog här om du vill
+            if (window.confirm('Är du säker på att du vill stänga utan att spara?')) {
+                onClose();
+            }
         }
     };
 
@@ -154,6 +127,10 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
             e.preventDefault(); // Förhindra standardbeteendet för Enter
         }
     };
+
+    useEffect(() => {
+        console.log('editedCompany updated:', editedCompany);
+    }, [editedCompany]);
 
     return (
         <div className={styles.modalOverlay} onClick={handleOutsideClick}>
@@ -225,10 +202,27 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="features">Features</label>
-                        <TagInput
-                            tags={editedCompany.features}
-                            setTags={(tags) => setEditedCompany(prev => ({ ...prev, features: tags }))}
+                        <div className={styles.tagContainer}>
+                            {editedCompany.features.map((feature, index) => (
+                                <span key={index} className={styles.tag}>
+                                    {feature}
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleDeleteTag('features', index)}
+                                        className={styles.deleteTag}
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                        <input
+                            type="text"
+                            value={newTag}
+                            onChange={handleTagInputChange}
+                            onKeyDown={handleTagInputKeyDown('features')}
                             placeholder="Skriv en feature och tryck Enter"
+                            className={styles.tagInput}
                         />
                     </div>
                     <div className={styles.formGroup}>
@@ -243,10 +237,27 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="desiredAreas">Önskade områden</label>
-                        <TagInput
-                            tags={editedCompany.desiredAreas}
-                            setTags={(tags) => setEditedCompany(prev => ({ ...prev, desiredAreas: tags }))}
+                        <div className={styles.tagContainer}>
+                            {editedCompany.desiredAreas.map((area, index) => (
+                                <span key={index} className={styles.tag}>
+                                    {area}
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleDeleteTag('desiredAreas', index)}
+                                        className={styles.deleteTag}
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                        <input
+                            type="text"
+                            value={newTag}
+                            onChange={handleTagInputChange}
+                            onKeyDown={handleTagInputKeyDown('desiredAreas')}
                             placeholder="Skriv ett område och tryck Enter"
+                            className={styles.tagInput}
                         />
                     </div>
                     <div className={styles.formGroup}>
@@ -283,10 +294,27 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="desiredFeatures">Önskade features</label>
-                        <TagInput
-                            tags={editedCompany.desiredFeatures}
-                            setTags={(tags) => setEditedCompany(prev => ({ ...prev, desiredFeatures: tags }))}
+                        <div className={styles.tagContainer}>
+                            {editedCompany.desiredFeatures.map((feature, index) => (
+                                <span key={index} className={styles.tag}>
+                                    {feature}
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleDeleteTag('desiredFeatures', index)}
+                                        className={styles.deleteTag}
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                        <input
+                            type="text"
+                            value={newTag}
+                            onChange={handleTagInputChange}
+                            onKeyDown={handleTagInputKeyDown('desiredFeatures')}
                             placeholder="Skriv en önskad feature och tryck Enter"
+                            className={styles.tagInput}
                         />
                     </div>
                     <div className={styles.buttonGroup}>

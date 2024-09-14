@@ -1,28 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import CompanyModal from './CompanyModal';
 
-function CompanyList() {
-    const [companies, setCompanies] = useState([]);
+function CompanyList({ companies, onCompanyUpdate }) {
     const [selectedCompany, setSelectedCompany] = useState(null);
-
-    const fetchCompanies = async () => {
-        try {
-            const response = await fetch('/api/companies');
-            if (!response.ok) {
-                throw new Error('Failed to fetch companies');
-            }
-            const data = await response.json();
-            setCompanies(data);
-        } catch (error) {
-            console.error('Error fetching companies:', error);
-        }
-    };
-
-    useEffect(() => {
-        fetchCompanies();
-    }, []); // Tom dependency array betyder att detta körs endast en gång vid mount
 
     const handleCompanyClick = (company) => {
         setSelectedCompany(company);
@@ -33,24 +15,31 @@ function CompanyList() {
     };
 
     const handleCompanyUpdated = (updatedCompany) => {
-        if (updatedCompany === null) {
-            // Företaget har raderats
-            setCompanies(companies.filter(c => c.id !== selectedCompany.id));
-        } else {
-            // Företaget har uppdaterats
-            setCompanies(companies.map(c => c.id === updatedCompany.id ? updatedCompany : c));
-        }
+        onCompanyUpdate(updatedCompany);
         setSelectedCompany(null);
     };
 
     return (
-        <div className="company-list">
+        <div className="list-container company-list">
             <h2>Företag</h2>
-            {companies.map((company) => (
-                <div key={`company-${company.id}`} className="company-item" onClick={() => handleCompanyClick(company)}>
-                    {company.name}
-                </div>
-            ))}
+            <div className="list-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Namn</th>
+                            <th>Org.nummer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {companies.map((company) => (
+                            <tr key={`company-${company.id}`} onClick={() => handleCompanyClick(company)}>
+                                <td>{company.name}</td>
+                                <td>{company.orgNumber}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
             {selectedCompany && (
                 <CompanyModal
                     company={selectedCompany}

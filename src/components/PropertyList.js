@@ -1,30 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PropertyModal from './PropertyModal';
 import { useNotification } from './NotificationContext';
 
-function PropertyList() {
-    const [properties, setProperties] = useState([]);
+function PropertyList({ properties, onPropertyUpdate }) {
     const [selectedProperty, setSelectedProperty] = useState(null);
     const { showNotification } = useNotification();
-
-    const fetchProperties = async () => {
-        try {
-            const response = await fetch('/api/properties');
-            if (!response.ok) {
-                throw new Error('Failed to fetch locals');
-            }
-            const data = await response.json();
-            setProperties(data);
-        } catch (error) {
-            console.error('Error fetching locals:', error);
-        }
-    };
-
-    useEffect(() => {
-        fetchProperties();
-    }, []); // Tom dependency array betyder att detta körs endast en gång vid mount
 
     const handlePropertyClick = (property) => {
         setSelectedProperty(property);
@@ -35,28 +17,36 @@ function PropertyList() {
     };
 
     const handlePropertyUpdated = (updatedProperty) => {
-        if (updatedProperty === null) {
-            // Lokalen har raderats
-            setProperties(properties.filter(p => p.id !== selectedProperty.id));
-        } else {
-            // Lokalen har uppdaterats
-            setProperties(properties.map(p => p.id === updatedProperty.id ? updatedProperty : p));
-        }
+        onPropertyUpdate(updatedProperty);
         setSelectedProperty(null);
+        showNotification('Fastighet uppdaterad', 'success');
     };
 
     return (
-        <div className="property-list">
+        <div className="list-container property-list">
             <h2>Lokaler</h2>
-            {properties.map((property) => (
-                <div key={`property-${property.id}`} className="property-item" onClick={() => handlePropertyClick(property)}>
-                    {property.address}
-                </div>
-            ))}
+            <div className="list-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Adress</th>
+                            <th>Område</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {properties.map((property) => (
+                            <tr key={`property-${property.id}`} onClick={() => handlePropertyClick(property)}>
+                                <td>{property.address}</td>
+                                <td>{property.area}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
             {selectedProperty && (
                 <PropertyModal
                     property={selectedProperty}
-                    onClose={() => setSelectedProperty(null)}
+                    onClose={handleCloseModal}
                     onPropertyUpdated={handlePropertyUpdated}
                 />
             )}
