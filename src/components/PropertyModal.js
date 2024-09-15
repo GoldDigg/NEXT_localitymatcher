@@ -5,6 +5,10 @@ import { useConfirmation } from './ConfirmationContext';
 import { useNotification } from './NotificationContext';
 import styles from './PropertyModal.module.css';
 
+const capitalizeFirstLetter = (string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+};
+
 function PropertyModal({ property, onClose, onPropertyUpdated }) {
     const [editedProperty, setEditedProperty] = useState(property);
     const { showConfirmation } = useConfirmation();
@@ -12,15 +16,24 @@ function PropertyModal({ property, onClose, onPropertyUpdated }) {
     const [newTag, setNewTag] = useState('');
 
     useEffect(() => {
+        console.log('Setting editedProperty:', property);
         setEditedProperty({
             ...property,
-            features: Array.isArray(property.features) ? property.features : [],
+            features: Array.isArray(property.features) ? [...property.features] : [],
         });
+    }, [property]);
+
+    useEffect(() => {
+        console.log('Property in modal:', property);
     }, [property]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setEditedProperty(prev => ({ ...prev, [name]: value }));
+        if (name === 'area') {
+            setEditedProperty(prev => ({ ...prev, [name]: capitalizeFirstLetter(value) }));
+        } else {
+            setEditedProperty(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleTagInputChange = (e) => {
@@ -30,11 +43,16 @@ function PropertyModal({ property, onClose, onPropertyUpdated }) {
     const handleTagInputKeyDown = (field) => (e) => {
         if (e.key === 'Enter' && newTag.trim()) {
             e.preventDefault();
-            setEditedProperty(prev => ({
-                ...prev,
-                [field]: [...prev[field], newTag.trim()]
-            }));
-            setNewTag('');
+            const formattedTag = capitalizeFirstLetter(newTag.trim());
+            if (!editedProperty[field].includes(formattedTag)) {
+                setEditedProperty(prev => ({
+                    ...prev,
+                    [field]: [...prev[field], formattedTag]
+                }));
+                setNewTag('');
+            } else {
+                showNotification('Denna feature finns redan i listan', 'info');
+            }
         }
     };
 
@@ -50,7 +68,10 @@ function PropertyModal({ property, onClose, onPropertyUpdated }) {
         try {
             const dataToSend = {
                 ...editedProperty,
-                features: editedProperty.features || [],
+                features: editedProperty.features, // Explicit skicka med features
+                size: parseFloat(editedProperty.size),
+                rent: parseFloat(editedProperty.rent),
+                availableFrom: editedProperty.availableFrom ? new Date(editedProperty.availableFrom).toISOString() : null,
             };
             const response = await fetch(`/api/properties/${property.id}`, {
                 method: 'PUT',
@@ -61,7 +82,8 @@ function PropertyModal({ property, onClose, onPropertyUpdated }) {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
 
             const updatedProperty = await response.json();
@@ -88,7 +110,7 @@ function PropertyModal({ property, onClose, onPropertyUpdated }) {
                         throw new Error(`Failed to delete property: ${errorData.message}`);
                     }
                     
-                    onPropertyUpdated(null); // Detta kommer att trigga omatchning
+                    onPropertyUpdated(null); // Skicka null för att indikera radering
                     showNotification('Lokalen har raderats', 'success');
                     onClose();
                 } catch (error) {
@@ -101,9 +123,7 @@ function PropertyModal({ property, onClose, onPropertyUpdated }) {
 
     const handleOutsideClick = (e) => {
         if (e.target === e.currentTarget) {
-            if (window.confirm('Är du säker på att du vill stänga utan att spara?')) {
-                onClose();
-            }
+            onClose();
         }
     };
 

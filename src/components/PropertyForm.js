@@ -29,7 +29,12 @@ function PropertyForm({ onPropertyAdded }) {
     };
 
     const handleFeaturesTags = (newTags) => {
-        setFeatures(newTags.map(capitalizeFirstLetter));
+        const formattedTag = capitalizeFirstLetter(newTags[newTags.length - 1]);
+        if (!features.includes(formattedTag)) {
+            setFeatures([...features, formattedTag]);
+        } else {
+            showNotification('Denna feature finns redan i listan', 'info');
+        }
     };
 
     const handleInputKeyDown = (e) => {

@@ -99,11 +99,21 @@ function CompanyForm({ onCompanyAdded }) {
     };
 
     const handleDesiredAreasTags = (newTags) => {
-        setDesiredAreas(newTags.map(capitalizeFirstLetter));
+        const formattedTag = capitalizeFirstLetter(newTags[newTags.length - 1]);
+        if (!desiredAreas.includes(formattedTag)) {
+            setDesiredAreas([...desiredAreas, formattedTag]);
+        } else {
+            showNotification('Detta område finns redan i listan', 'info');
+        }
     };
 
     const handleDesiredFeaturesTags = (newTags) => {
-        setDesiredFeatures(newTags.map(capitalizeFirstLetter));
+        const formattedTag = capitalizeFirstLetter(newTags[newTags.length - 1]);
+        if (!desiredFeatures.includes(formattedTag)) {
+            setDesiredFeatures([...desiredFeatures, formattedTag]);
+        } else {
+            showNotification('Denna feature finns redan i listan', 'info');
+        }
     };
 
     const handleInputKeyDown = (e) => {
@@ -128,21 +138,21 @@ function CompanyForm({ onCompanyAdded }) {
                 return;
             }
 
-            const formattedDate = contractEndDate ? format(new Date(contractEndDate), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx") : null;
+            const formattedDate = contractEndDate ? format(new Date(contractEndDate), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx") : undefined;
             
             const companyData = {
                 name,
                 orgNumber,
-                streetAddress,
-                area,
-                size: size ? parseInt(size) : null,
-                rent: rent ? parseInt(rent) : null,
+                streetAddress: streetAddress || undefined,
+                area: area || undefined,
+                size: size ? parseFloat(size) : undefined,
+                rent: rent ? parseFloat(rent) : undefined,
                 features,
                 contractEndDate: formattedDate,
                 desiredAreas,
-                desiredSizeMin: desiredSizeMin ? parseInt(desiredSizeMin) : null,
-                desiredSizeMax: desiredSizeMax ? parseInt(desiredSizeMax) : null,
-                desiredMaxRent: desiredMaxRent ? parseInt(desiredMaxRent) : null,
+                desiredSizeMin: desiredSizeMin ? parseFloat(desiredSizeMin) : undefined,
+                desiredSizeMax: desiredSizeMax ? parseFloat(desiredSizeMax) : undefined,
+                desiredMaxRent: desiredMaxRent ? parseFloat(desiredMaxRent) : undefined,
                 desiredFeatures
             };
 

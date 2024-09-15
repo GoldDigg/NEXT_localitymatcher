@@ -1,12 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropertyModal from './PropertyModal';
 import { useNotification } from './NotificationContext';
 
 function PropertyList({ properties, onPropertyUpdate, triggerRematching }) {
     const [selectedProperty, setSelectedProperty] = useState(null);
     const { showNotification } = useNotification();
+
+    useEffect(() => {
+        console.log('Properties in PropertyList:', properties);
+    }, [properties]);
 
     const handlePropertyClick = (property) => {
         setSelectedProperty(property);
@@ -17,10 +21,25 @@ function PropertyList({ properties, onPropertyUpdate, triggerRematching }) {
     };
 
     const handlePropertyUpdated = (updatedProperty) => {
-        onPropertyUpdate(updatedProperty);
-        setSelectedProperty(null);
-        showNotification('Fastighet uppdaterad', 'success');
-        triggerRematching(); // Lägg till denna rad
+        console.log('Updating property:', updatedProperty);
+        if (updatedProperty === null) {
+            // Lokal har raderats
+            onPropertyUpdate(prevProperties => prevProperties.filter(property => property.id !== selectedProperty.id));
+            setSelectedProperty(null);
+            showNotification('Lokal har raderats', 'success');
+        } else {
+            // Lokal har uppdaterats
+            onPropertyUpdate(prevProperties => {
+                const newProperties = prevProperties.map(property => 
+                    property.id === updatedProperty.id ? {...updatedProperty} : property
+                );
+                console.log('New properties list:', newProperties);
+                return newProperties;
+            });
+            setSelectedProperty(null);
+            showNotification('Lokal har uppdaterats', 'success');
+        }
+        triggerRematching();
     };
 
     return (

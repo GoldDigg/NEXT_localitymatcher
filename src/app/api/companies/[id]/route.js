@@ -47,7 +47,7 @@ export async function PUT(request, { params }) {
         size: updatedData.size !== undefined ? parseFloat(updatedData.size) : undefined,
         rent: updatedData.rent !== undefined ? parseFloat(updatedData.rent) : undefined,
         features: updatedData.features || undefined,
-        contractEndDate: updatedData.contractEndDate,
+        contractEndDate: updatedData.contractEndDate ? new Date(updatedData.contractEndDate) : undefined,
         desiredAreas: updatedData.desiredAreas || undefined,
         desiredSizeMin: updatedData.desiredSizeMin !== undefined ? parseFloat(updatedData.desiredSizeMin) : undefined,
         desiredSizeMax: updatedData.desiredSizeMax !== undefined ? parseFloat(updatedData.desiredSizeMax) : undefined,

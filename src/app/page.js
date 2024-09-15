@@ -133,10 +133,13 @@ export default function Home() {
     });
   }, []);
 
-  const handlePropertyUpdate = (updatedProperty) => {
-    // Implementera logik för att uppdatera fastighetslistan
-    // Detta kan innebära att anropa fetchProperties igen eller uppdatera state direkt
-  };
+  const handlePropertyUpdate = useCallback((updateFn) => {
+    setProperties(prevProperties => {
+        const updatedProperties = updateFn(prevProperties);
+        console.log('Updated properties in main component:', updatedProperties);
+        return updatedProperties;
+    });
+  }, []);
 
   const triggerRematching = () => {
     const newMatches = [];

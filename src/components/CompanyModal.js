@@ -5,6 +5,10 @@ import { useConfirmation } from './ConfirmationContext';
 import { useNotification } from './NotificationContext';
 import styles from './CompanyModal.module.css';
 
+const capitalizeFirstLetter = (string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+};
+
 function CompanyModal({ company, onClose, onCompanyUpdated }) {
     const [editedCompany, setEditedCompany] = useState(company);
     const { showConfirmation } = useConfirmation();
@@ -22,7 +26,11 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setEditedCompany(prev => ({ ...prev, [name]: value }));
+        if (name === 'area') {
+            setEditedCompany(prev => ({ ...prev, [name]: capitalizeFirstLetter(value) }));
+        } else {
+            setEditedCompany(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleTagInputChange = (e) => {
@@ -32,11 +40,16 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
     const handleTagInputKeyDown = (field) => (e) => {
         if (e.key === 'Enter' && newTag.trim()) {
             e.preventDefault();
-            setEditedCompany(prev => ({
-                ...prev,
-                [field]: [...prev[field], newTag.trim()]
-            }));
-            setNewTag('');
+            const formattedTag = capitalizeFirstLetter(newTag.trim());
+            if (!editedCompany[field].includes(formattedTag)) {
+                setEditedCompany(prev => ({
+                    ...prev,
+                    [field]: [...prev[field], formattedTag]
+                }));
+                setNewTag('');
+            } else {
+                showNotification(`Denna ${field === 'desiredAreas' ? 'område' : 'feature'} finns redan i listan`, 'info');
+            }
         }
     };
 
@@ -59,12 +72,12 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                 features: editedCompany.features || [],
                 desiredAreas: editedCompany.desiredAreas || [],
                 desiredFeatures: editedCompany.desiredFeatures || [],
-                size: editedCompany.size ? parseFloat(editedCompany.size) : null,
-                rent: editedCompany.rent ? parseFloat(editedCompany.rent) : null,
-                desiredSizeMin: editedCompany.desiredSizeMin ? parseFloat(editedCompany.desiredSizeMin) : null,
-                desiredSizeMax: editedCompany.desiredSizeMax ? parseFloat(editedCompany.desiredSizeMax) : null,
-                desiredMaxRent: editedCompany.desiredMaxRent ? parseFloat(editedCompany.desiredMaxRent) : null,
-                contractEndDate: editedCompany.contractEndDate ? new Date(editedCompany.contractEndDate).toISOString() : null,
+                size: editedCompany.size ? parseFloat(editedCompany.size) : undefined,
+                rent: editedCompany.rent ? parseFloat(editedCompany.rent) : undefined,
+                desiredSizeMin: editedCompany.desiredSizeMin ? parseFloat(editedCompany.desiredSizeMin) : undefined,
+                desiredSizeMax: editedCompany.desiredSizeMax ? parseFloat(editedCompany.desiredSizeMax) : undefined,
+                desiredMaxRent: editedCompany.desiredMaxRent ? parseFloat(editedCompany.desiredMaxRent) : undefined,
+                contractEndDate: editedCompany.contractEndDate || undefined,
             };
             console.log('Sending data:', JSON.stringify(dataToSend));
             const response = await fetch(`/api/companies/${company.id}`, {
@@ -118,10 +131,7 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
 
     const handleOutsideClick = (e) => {
         if (e.target === e.currentTarget) {
-            // Lägg till en bekräftelsedialog här om du vill
-            if (window.confirm('Är du säker på att du vill stänga utan att spara?')) {
-                onClose();
-            }
+            onClose();
         }
     };
 
