@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import PropertyModal from './PropertyModal';
 import { useNotification } from './NotificationContext';
 
-function PropertyList({ properties, onPropertyUpdate }) {
+function PropertyList({ properties, onPropertyUpdate, triggerRematching }) {
     const [selectedProperty, setSelectedProperty] = useState(null);
     const { showNotification } = useNotification();
 
@@ -20,6 +20,7 @@ function PropertyList({ properties, onPropertyUpdate }) {
         onPropertyUpdate(updatedProperty);
         setSelectedProperty(null);
         showNotification('Fastighet uppdaterad', 'success');
+        triggerRematching(); // Lägg till denna rad
     };
 
     return (

@@ -125,14 +125,30 @@ export default function Home() {
     setSelectedMatch(match);
   };
 
-  const handleCompanyUpdate = (updatedCompany) => {
-    // Implementera logik för att uppdatera företagslistan
-    // Detta kan innebära att anropa fetchCompanies igen eller uppdatera state direkt
-  };
+  const handleCompanyUpdate = useCallback((updateFn) => {
+    setCompanies(prevCompanies => {
+        const updatedCompanies = updateFn(prevCompanies);
+        console.log('Updated companies in main component:', updatedCompanies);
+        return updatedCompanies;
+    });
+  }, []);
 
   const handlePropertyUpdate = (updatedProperty) => {
     // Implementera logik för att uppdatera fastighetslistan
     // Detta kan innebära att anropa fetchProperties igen eller uppdatera state direkt
+  };
+
+  const triggerRematching = () => {
+    const newMatches = [];
+    for (const company of companies) {
+      for (const property of properties) {
+        const score = calculateMatchScore(company, property);
+        if (score > 0) {
+          newMatches.push({ company, property, score });
+        }
+      }
+    }
+    setMatches(newMatches.sort((a, b) => b.score - a.score));
   };
 
   return (
@@ -190,13 +206,15 @@ export default function Home() {
         <div className="list-column">
           <CompanyList 
             companies={companies} 
-            onCompanyUpdate={handleCompanyUpdate}
+            onCompanyUpdate={handleCompanyUpdate} 
+            triggerRematching={triggerRematching}
           />
         </div>
         <div className="list-column">
           <PropertyList 
             properties={properties} 
-            onPropertyUpdate={handlePropertyUpdate}
+            onPropertyUpdate={handlePropertyUpdate} 
+            triggerRematching={triggerRematching}
           />
         </div>
       </div>

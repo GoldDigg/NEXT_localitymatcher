@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import CompanyModal from './CompanyModal';
 
-function CompanyList({ companies, onCompanyUpdate }) {
+function CompanyList({ companies, onCompanyUpdate, triggerRematching }) {
     const [selectedCompany, setSelectedCompany] = useState(null);
 
     const handleCompanyClick = (company) => {
@@ -15,8 +15,20 @@ function CompanyList({ companies, onCompanyUpdate }) {
     };
 
     const handleCompanyUpdated = (updatedCompany) => {
-        onCompanyUpdate(updatedCompany);
+        console.log('Received updated company in CompanyList:', updatedCompany);
+        if (updatedCompany) {
+            onCompanyUpdate(prevCompanies => 
+                prevCompanies.map(company => 
+                    company.id === updatedCompany.id ? {...company, ...updatedCompany} : company
+                )
+            );
+        } else {
+            onCompanyUpdate(prevCompanies => 
+                prevCompanies.filter(company => company.id !== selectedCompany.id)
+            );
+        }
         setSelectedCompany(null);
+        triggerRematching();
     };
 
     return (

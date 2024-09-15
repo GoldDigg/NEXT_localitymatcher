@@ -1,10 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './TagInput.module.css';
 
 const TagInput = ({ tags, setTags, placeholder }) => {
   const [input, setInput] = useState('');
+
+  useEffect(() => {
+    // Uppdatera lokalt state när tags prop ändras
+    setInput('');
+  }, [tags]);
 
   const handleInputChange = (e) => {
     setInput(e.target.value);

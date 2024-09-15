@@ -41,10 +41,14 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
     };
 
     const handleDeleteTag = (field, index) => {
-        setEditedCompany(prev => ({
-            ...prev,
-            [field]: prev[field].filter((_, i) => i !== index)
-        }));
+        setEditedCompany(prev => {
+            const updatedCompany = {
+                ...prev,
+                [field]: prev[field].filter((_, i) => i !== index)
+            };
+            console.log(`Deleted tag from ${field}:`, updatedCompany);
+            return updatedCompany;
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -60,6 +64,7 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                 desiredSizeMin: editedCompany.desiredSizeMin ? parseFloat(editedCompany.desiredSizeMin) : null,
                 desiredSizeMax: editedCompany.desiredSizeMax ? parseFloat(editedCompany.desiredSizeMax) : null,
                 desiredMaxRent: editedCompany.desiredMaxRent ? parseFloat(editedCompany.desiredMaxRent) : null,
+                contractEndDate: editedCompany.contractEndDate ? new Date(editedCompany.contractEndDate).toISOString() : null,
             };
             console.log('Sending data:', JSON.stringify(dataToSend));
             const response = await fetch(`/api/companies/${company.id}`, {
@@ -76,23 +81,21 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
             }
             
             const updatedCompany = await response.json();
-            console.log('Updated company:', updatedCompany);
+            console.log('Received updated company from server:', updatedCompany);
             
             onCompanyUpdated(updatedCompany);
-            showNotification('Företaget har uppdaterats', 'success');
+            showNotification('Företaget har uppdaterats');
             onClose();
         } catch (error) {
             console.error('Error updating company:', error);
-            showNotification(`Ett fel uppstod vid uppdatering av företaget: ${error.message}`, 'error');
+            showNotification(`Ett fel uppstod vid uppdatering av företaget: ${error.message}`);
         }
     };
 
     const handleDelete = () => {
-        console.log('handleDelete called');
         showConfirmation(
             `Är du säker på att du vill radera ${company.name}?`,
             async () => {
-                console.log('Confirmation callback triggered');
                 try {
                     const response = await fetch(`/api/companies/${company.id}`, {
                         method: 'DELETE',
@@ -102,8 +105,8 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                     }
                     const data = await response.json();
                     console.log('Company deleted successfully:', data);
-                    onCompanyUpdated(null); // Skicka null för att indikera borttagning
-                    showNotification('Företaget har raderats', 'success');
+                    onCompanyUpdated(null); // Detta kommer att trigga omatchning
+                    showNotification('Företaget har raderats');
                     onClose();
                 } catch (error) {
                     console.error('Error deleting company:', error);

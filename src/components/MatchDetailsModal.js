@@ -49,7 +49,8 @@ const MatchDetailsModal = ({ match, onClose }) => {
       <div className="comparison-company">{companyValue}</div>
       <div className="comparison-property">{propertyValue}</div>
       <div className="comparison-score">
-        {Number.isInteger(score) ? score : score.toFixed(2)} / {maxScore} poäng
+        <span className="score-value">{Number.isInteger(score) ? score : score.toFixed(2)}</span>
+        <span className="max-score">/ {maxScore} poäng</span>
       </div>
     </div>
   );
@@ -79,7 +80,9 @@ const MatchDetailsModal = ({ match, onClose }) => {
             <div>Kriterium</div>
             <div>Företagets önskemål</div>
             <div>Lokalens egenskaper</div>
-            <div>Poäng</div>
+            <div className="comparison-score">
+              <span className="score-value">Poäng</span>
+            </div>
           </div>
           <ComparisonRow 
             label="Område" 
@@ -118,7 +121,9 @@ const MatchDetailsModal = ({ match, onClose }) => {
           />
         </div>
         <div className="total-score">
-          <strong>Total poäng:</strong> {Math.round(score)} / 100
+          <strong>Total poäng:</strong> 
+          <span className="score-value">{Math.round(score)}</span>
+          <span className="max-score">/ 100</span>
         </div>
         <button onClick={onClose}>Stäng</button>
       </div>

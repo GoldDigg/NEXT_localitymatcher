@@ -19,17 +19,6 @@ export async function GET(request, { params }) {
 
     console.log('Fetched company:', company);
 
-    // Behåll din existerande logik för att hantera features, desiredAreas, etc.
-    if (company.features && !Array.isArray(company.features)) {
-      company.features = company.features.split(',').map(item => item.trim());
-    }
-    if (company.desiredAreas && !Array.isArray(company.desiredAreas)) {
-      company.desiredAreas = company.desiredAreas.split(',').map(item => item.trim());
-    }
-    if (company.desiredFeatures && !Array.isArray(company.desiredFeatures)) {
-      company.desiredFeatures = company.desiredFeatures.split(',').map(item => item.trim());
-    }
-
     return NextResponse.json(company);
   } catch (error) {
     console.error('Error fetching company:', error);
@@ -43,6 +32,11 @@ export async function PUT(request, { params }) {
   console.log('Received data for update:', updatedData)
 
   try {
+    // Validera indata
+    if (!updatedData.name || !updatedData.orgNumber) {
+      return NextResponse.json({ error: 'Name and orgNumber are required' }, { status: 400 });
+    }
+
     const updatedCompany = await prisma.company.update({
       where: { id: parseInt(id) },
       data: {
@@ -50,15 +44,15 @@ export async function PUT(request, { params }) {
         orgNumber: updatedData.orgNumber,
         streetAddress: updatedData.streetAddress,
         area: updatedData.area,
-        size: updatedData.size,
-        rent: updatedData.rent,
-        features: updatedData.features,
+        size: updatedData.size !== undefined ? parseFloat(updatedData.size) : undefined,
+        rent: updatedData.rent !== undefined ? parseFloat(updatedData.rent) : undefined,
+        features: updatedData.features || undefined,
         contractEndDate: updatedData.contractEndDate,
-        desiredAreas: updatedData.desiredAreas,
-        desiredSizeMin: updatedData.desiredSizeMin,
-        desiredSizeMax: updatedData.desiredSizeMax,
-        desiredMaxRent: updatedData.desiredMaxRent,
-        desiredFeatures: updatedData.desiredFeatures,
+        desiredAreas: updatedData.desiredAreas || undefined,
+        desiredSizeMin: updatedData.desiredSizeMin !== undefined ? parseFloat(updatedData.desiredSizeMin) : undefined,
+        desiredSizeMax: updatedData.desiredSizeMax !== undefined ? parseFloat(updatedData.desiredSizeMax) : undefined,
+        desiredMaxRent: updatedData.desiredMaxRent !== undefined ? parseFloat(updatedData.desiredMaxRent) : undefined,
+        desiredFeatures: updatedData.desiredFeatures || undefined,
       },
     })
 
