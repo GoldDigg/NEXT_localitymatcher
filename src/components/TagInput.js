@@ -7,7 +7,6 @@ const TagInput = ({ tags, setTags, placeholder }) => {
   const [input, setInput] = useState('');
 
   useEffect(() => {
-    // Uppdatera lokalt state när tags prop ändras
     setInput('');
   }, [tags]);
 
@@ -16,15 +15,17 @@ const TagInput = ({ tags, setTags, placeholder }) => {
   };
 
   const handleInputKeyDown = (e) => {
-    if (e.key === 'Enter' && input) {
+    if (e.key === 'Enter' && input.trim()) {
       e.preventDefault();
-      setTags([...tags, input]);
+      setTags([...tags, input.trim()]); // Lägg till taggen
       setInput('');
     }
   };
 
   const removeTag = (index) => {
-    setTags(tags.filter((_, i) => i !== index));
+    if (window.confirm(`Vill du verkligen ta bort "${tags[index]}"?`)) {
+      setTags(tags.filter((_, i) => i !== index)); // Ta bort taggen om bekräftad
+    }
   };
 
   return (

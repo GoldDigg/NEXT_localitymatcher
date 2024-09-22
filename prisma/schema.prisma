@@ -8,31 +8,48 @@ datasource db {
 }
 
 model Company {
-  id              Int       @id @default(autoincrement())
-  name            String
-  orgNumber       String    @unique
-  streetAddress   String?
-  area            String?
-  size            Float?
-  rent            Float?
-  features        String[]
-  contractEndDate DateTime?
-  desiredAreas    String[]
-  desiredSizeMin  Float?
-  desiredSizeMax  Float?
-  desiredMaxRent  Float?
-  desiredFeatures String[]
+  id                Int     @id @default(autoincrement())
+  name              String  // Företagsnamn
+  orgNumber         String  // Org nummer
+  streetAddress     String  // Gatuadress
+  currentAreaId    Int?    // Lägg till en kolumn för att referera till Area
+  currentArea      Area?   @relation("CurrentCompanyArea", fields: [currentAreaId], references: [id]) // Nuvarande område
+  desiredAreas      Area[]  @relation("DesiredCompanyAreas") // Önskade områden
+  size              Float?  // Storlek
+  rent              Float?  // Hyra
+  features          Tag[]   @relation("CompanyFeatures") // Egenskaper (Nuvarande lokals egenskaper)
+  contractEndDate   DateTime? // Avtalstid t.om
+  desiredSizeMin    Float?  // Önskad storlek min
+  desiredSizeMax    Float?  // Önskad storlek max
+  desiredMaxRent    Float?  // Önskad hyra max
+  desiredFeatures    Tag[]   @relation("CompanyDesiredFeatures") // Önskade egenskaper
 }
 
 model Property {
-  id             Int      @id @default(autoincrement())
-  address        String
-  size           Float
-  area           String
-  features       String[]
-  rent           Float
-  availableFrom  DateTime
-  propertyOwner  String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                Int     @id @default(autoincrement())
+  address           String   // Adress
+  size              Float    // Storlek
+  area              String   // Område
+  features          Tag[]    @relation("PropertyFeatures") // Egenskaper
+  rent              Float    // Hyra
+  availableFrom     DateTime // Tillgänglig från
+  propertyOwner     String   // Fastighetsägare
+  vacant            Boolean   // Vakant (Ja eller Nej)
+}
+
+model Tag {
+    id                Int     @id @default(autoincrement())
+    type              String
+    name              String
+    companies         Company[] @relation("CompanyFeatures")
+    desiredFeatures   Company[] @relation("CompanyDesiredFeatures") // Motsvarande relation
+    properties        Property[] @relation("PropertyFeatures")
+}
+
+model Area {
+    id                Int     @id @default(autoincrement())
+    name              String
+    type              String
+    currentCompanies  Company[] @relation("CurrentCompanyArea") // Företag som har detta område som nuvarande
+    desiredCompanies  Company[] @relation("DesiredCompanyAreas") // Företag som önskar detta område
 }

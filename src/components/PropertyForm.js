@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useConfirmation } from './ConfirmationContext';
 import { useNotification } from './NotificationContext';
 import { format } from 'date-fns';
-import TagInput from './TagInput';
+import SelectableTags from './SelectableTags';
 import { useRouter } from 'next/navigation';
 
 function PropertyForm({ onPropertyAdded }) {
@@ -13,14 +13,34 @@ function PropertyForm({ onPropertyAdded }) {
     const [address, setAddress] = useState('');
     const [size, setSize] = useState('');
     const [area, setArea] = useState('');
-    const [features, setFeatures] = useState([]);
+    const [egenskaper, setEgenskaper] = useState([]);
     const [rent, setRent] = useState('');
     const [availableFrom, setAvailableFrom] = useState('');
     const [propertyOwner, setPropertyOwner] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [featuresOptions, setFeaturesOptions] = useState([]);
+    const [areasOptions, setAreasOptions] = useState([]);
     const router = useRouter();
 
+    useEffect(() => {
+        const fetchTags = async () => {
+            try {
+                const response = await fetch('/api/tags');
+                const data = await response.json();
+                const egenskaper = data.filter(tag => tag.type === 'egenskap');
+                const areas = data.filter(tag => tag.type === 'area');
+                setFeaturesOptions(egenskaper);
+                setAreasOptions(areas);
+            } catch (error) {
+                console.error('Error fetching tags:', error);
+            }
+        };
+
+        fetchTags();
+    }, []);
+
     const capitalizeFirstLetter = (string) => {
+        if (!string) return '';
         return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
     };
 
@@ -28,12 +48,13 @@ function PropertyForm({ onPropertyAdded }) {
         setArea(capitalizeFirstLetter(e.target.value));
     };
 
-    const handleFeaturesTags = (newTags) => {
+    const handleEgenskaperTags = (newTags) => {
+        if (newTags.length === 0) return;
         const formattedTag = capitalizeFirstLetter(newTags[newTags.length - 1]);
-        if (!features.includes(formattedTag)) {
-            setFeatures([...features, formattedTag]);
+        if (!egenskaper.some(egenskap => egenskap.toLowerCase() === formattedTag.toLowerCase())) {
+            setEgenskaper([...egenskaper, formattedTag]);
         } else {
-            showNotification('Denna feature finns redan i listan', 'info');
+            showNotification('Denna egenskap finns redan i listan', 'info');
         }
     };
 
@@ -56,7 +77,7 @@ function PropertyForm({ onPropertyAdded }) {
                 address,
                 size: size ? parseInt(size) : null,
                 area,
-                features,
+                egenskaper,
                 rent: rent ? parseInt(rent) : null,
                 availableFrom: formattedDate,
                 propertyOwner
@@ -83,7 +104,7 @@ function PropertyForm({ onPropertyAdded }) {
             setAddress('');
             setSize('');
             setArea('');
-            setFeatures([]);
+            setEgenskaper([]);
             setRent('');
             setAvailableFrom('');
             setPropertyOwner('');
@@ -127,21 +148,18 @@ function PropertyForm({ onPropertyAdded }) {
                 </div>
                 <div className="form-group custom-form-group">
                     <label htmlFor="area" className="custom-label">Område</label>
-                    <input
-                        id="area"
-                        type="text"
-                        value={area}
-                        onChange={handleAreaChange}
-                        required
-                        className="custom-input"
+                    <SelectableTags
+                        options={areasOptions}
+                        selectedTags={[area]}
+                        setSelectedTags={(tags) => setArea(tags[0])}
                     />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="features">Features</label>
-                    <TagInput
-                        tags={features}
-                        setTags={handleFeaturesTags}
-                        placeholder="Skriv en feature och tryck Enter"
+                    <label htmlFor="egenskaper">Egenskaper</label>
+                    <SelectableTags
+                        options={featuresOptions}
+                        selectedTags={egenskaper}
+                        setSelectedTags={setEgenskaper}
                     />
                 </div>
                 <div className="form-group custom-form-group">

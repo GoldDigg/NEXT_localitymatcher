@@ -6,6 +6,7 @@ import { useNotification } from './NotificationContext';
 function Notification() {
     const { notificationState, hideNotification } = useNotification();
     const buttonRef = useRef(null);
+    const [showRemove, setShowRemove] = React.useState(false);
 
     useEffect(() => {
         const handleKeyDown = (event) => {

@@ -1,7 +1,7 @@
 .tagInputContainer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    display: flex; /* Flexbox för att placera input och taggar i rad */
+    flex-wrap: wrap; /* Tillåt att taggarna bryts till nästa rad */
+    align-items: center; /* Centrera vertikalt */
     padding: 5px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -20,14 +20,20 @@
     margin: 2px;
     display: flex;
     align-items: center;
+    position: relative; /* Lägg till positionering för kryssknappen */
 }
 
 .tag button {
+    display: none; /* Döljer kryssknappen som standard */
     background: none;
     border: none;
     cursor: pointer;
     font-size: 14px;
     margin-left: 5px;
+}
+
+.tag:hover button {
+    display: block; /* Visa kryssknappen vid hover */
 }
 
 .tagInputContainer input {

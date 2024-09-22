@@ -1,12 +1,13 @@
-'use client'; // Lägg till denna rad om det är en Client Component
+'use client'; // Detta gör komponenten till en klientkomponent
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useConfirmation } from './ConfirmationContext';
 import { debounce } from 'lodash';
 import { useNotification } from './NotificationContext';
-import { format } from 'date-fns'; // Lägg till denna import överst i filen
-import TagInput from './TagInput';
-import { useRouter } from 'next/navigation'; // Uppdatera från 'next/router' om du använder den
+import { format } from 'date-fns';
+import SelectableTags from './SelectableTags';
+import { useRouter } from 'next/navigation';
+import SelectableAreas from './SelectableAreas';
 
 function CompanyForm({ onCompanyAdded }) {
     const { showConfirmation } = useConfirmation();
@@ -18,16 +19,48 @@ function CompanyForm({ onCompanyAdded }) {
     const [area, setArea] = useState('');
     const [size, setSize] = useState('');
     const [rent, setRent] = useState('');
-    const [features, setFeatures] = useState([]);
+    const [egenskaper, setEgenskaper] = useState([]);
     const [contractEndDate, setContractEndDate] = useState('');
     const [desiredAreas, setDesiredAreas] = useState([]);
     const [desiredSizeMin, setDesiredSizeMin] = useState('');
     const [desiredSizeMax, setDesiredSizeMax] = useState('');
     const [desiredMaxRent, setDesiredMaxRent] = useState('');
-    const [desiredFeatures, setDesiredFeatures] = useState([]);
+    const [desiredEgenskaper, setDesiredEgenskaper] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formSubmitCount, setFormSubmitCount] = useState(0);
     const router = useRouter();
+    const [featuresOptions, setFeaturesOptions] = useState([]);
+    const [areasOptions, setAreasOptions] = useState([]);
+    const [newTag, setNewTag] = useState('');
+    const [tags, setTags] = useState([]); // State för att lagra taggar
+    const [areas, setAreas] = useState([]); // Nytt state för områden
+    const [newArea, setNewArea] = useState(''); // State för att lagra nytt område
+    const [selectedArea, setSelectedArea] = useState('');
+
+    useEffect(() => {
+        const fetchTagsAndAreas = async () => {
+            try {
+                const [tagsResponse, areasResponse] = await Promise.all([
+                    fetch('/api/tags'),
+                    fetch('/api/areas')
+                ]);
+                if (!tagsResponse.ok || !areasResponse.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const tagsData = await tagsResponse.json();
+                const areasData = await areasResponse.json();
+
+                const egenskaper = tagsData.filter(tag => tag.type === 'egenskap');
+                setFeaturesOptions(egenskaper);
+                setAreasOptions(areasData);
+                setAreas(areasData);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchTagsAndAreas();
+    }, []);
 
     const validateOrgNumberFormat = (orgNumber) => {
         const regex = /^\d{6}-\d{4}$/;
@@ -48,7 +81,7 @@ function CompanyForm({ onCompanyAdded }) {
             }
             const data = await response.json();
             console.log('API response data:', data);
-            
+
             // Kontrollera om 'exists' finns i svaret och är en boolean
             if (typeof data.exists === 'boolean') {
                 return !data.exists; // Returnera true om organisationsnumret INTE existerar
@@ -64,7 +97,6 @@ function CompanyForm({ onCompanyAdded }) {
 
     const debouncedValidate = useCallback(
         debounce(async (value) => {
-            console.log('Validating:', value);
             if (!validateOrgNumberFormat(value)) {
                 setOrgNumberError('Ogiltigt format. Använd XXXXXX-XXXX');
                 return;
@@ -87,6 +119,7 @@ function CompanyForm({ onCompanyAdded }) {
     };
 
     const capitalizeFirstLetter = (string) => {
+        if (typeof string !== 'string' || string.length === 0) return '';
         return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
     };
 
@@ -94,11 +127,22 @@ function CompanyForm({ onCompanyAdded }) {
         setArea(capitalizeFirstLetter(e.target.value));
     };
 
-    const handleFeaturesTags = (newTags) => {
-        setFeatures(newTags.map(capitalizeFirstLetter));
+    const handleEgenskaperTags = (newTags) => {
+        const uniqueTags = newTags.filter(tag =>
+            !egenskaper.some(existingTag =>
+                existingTag.toLowerCase() === capitalizeFirstLetter(tag).toLowerCase()
+            )
+        );
+
+        if (uniqueTags.length < newTags.length) {
+            showNotification('En eller flera egenskaper finns redan i listan', 'info');
+        }
+
+        setEgenskaper([...egenskaper, ...uniqueTags.map(capitalizeFirstLetter)]);
     };
 
     const handleDesiredAreasTags = (newTags) => {
+        if (newTags.length === 0) return; // Kontrollera om det finns några taggar
         const formattedTag = capitalizeFirstLetter(newTags[newTags.length - 1]);
         if (!desiredAreas.includes(formattedTag)) {
             setDesiredAreas([...desiredAreas, formattedTag]);
@@ -107,12 +151,13 @@ function CompanyForm({ onCompanyAdded }) {
         }
     };
 
-    const handleDesiredFeaturesTags = (newTags) => {
+    const handleDesiredEgenskaperTags = (newTags) => {
+        if (newTags.length === 0) return; // Kontrollera om det finns några taggar
         const formattedTag = capitalizeFirstLetter(newTags[newTags.length - 1]);
-        if (!desiredFeatures.includes(formattedTag)) {
-            setDesiredFeatures([...desiredFeatures, formattedTag]);
+        if (!desiredEgenskaper.includes(formattedTag)) {
+            setDesiredEgenskaper([...desiredEgenskaper, formattedTag]);
         } else {
-            showNotification('Denna feature finns redan i listan', 'info');
+            showNotification('Denna egenskap finns redan i listan', 'info');
         }
     };
 
@@ -122,7 +167,7 @@ function CompanyForm({ onCompanyAdded }) {
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleCompanySubmit = async (e) => {
         e.preventDefault();
         if (isSubmitting || orgNumberError) {
             return;
@@ -139,7 +184,7 @@ function CompanyForm({ onCompanyAdded }) {
             }
 
             const formattedDate = contractEndDate ? format(new Date(contractEndDate), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx") : undefined;
-            
+
             const companyData = {
                 name,
                 orgNumber,
@@ -147,19 +192,19 @@ function CompanyForm({ onCompanyAdded }) {
                 area: area || undefined,
                 size: size ? parseFloat(size) : undefined,
                 rent: rent ? parseFloat(rent) : undefined,
-                features,
+                egenskaper,
                 contractEndDate: formattedDate,
                 desiredAreas,
                 desiredSizeMin: desiredSizeMin ? parseFloat(desiredSizeMin) : undefined,
                 desiredSizeMax: desiredSizeMax ? parseFloat(desiredSizeMax) : undefined,
                 desiredMaxRent: desiredMaxRent ? parseFloat(desiredMaxRent) : undefined,
-                desiredFeatures
+                desiredEgenskaper
             };
 
             console.log('Sending company data:', companyData);
-            console.log('Features:', companyData.features);
+            console.log('Egenskaper:', companyData.egenskaper);
             console.log('Desired Areas:', companyData.desiredAreas);
-            console.log('Desired Features:', companyData.desiredFeatures);
+            console.log('Desired Egenskaper:', companyData.desiredEgenskaper);
 
             const response = await fetch('/api/companies', {
                 method: 'POST',
@@ -175,7 +220,7 @@ function CompanyForm({ onCompanyAdded }) {
             const data = await response.json();
             console.log('Company created:', data);
             showNotification(`"${data.name}" har lagts till`);
-            
+
             // Reset all form fields
             setName('');
             setOrgNumber('');
@@ -184,13 +229,13 @@ function CompanyForm({ onCompanyAdded }) {
             setArea('');
             setSize('');
             setRent('');
-            setFeatures([]); // Reset features array
+            setEgenskaper([]); // Reset egenskaper array
             setContractEndDate('');
             setDesiredAreas([]); // Reset desiredAreas array
             setDesiredSizeMin('');
             setDesiredSizeMax('');
             setDesiredMaxRent('');
-            setDesiredFeatures([]); // Reset desiredFeatures array
+            setDesiredEgenskaper([]); // Reset desiredEgenskaper array
             setFormSubmitCount(prev => prev + 1);
 
             if (onCompanyAdded) {
@@ -204,10 +249,107 @@ function CompanyForm({ onCompanyAdded }) {
         }
     };
 
+    const handleAddTag = (e) => {
+        e.preventDefault();
+        if (newTag.trim() === '') return;
+        const formattedTag = capitalizeFirstLetter(newTag.trim());
+        if (!featuresOptions.some(tag => tag.name.toLowerCase() === formattedTag.toLowerCase())) {
+            setFeaturesOptions(prev => [...prev, { id: Date.now(), name: formattedTag, type: 'egenskap' }]);
+            setNewTag('');
+            showNotification(`Egenskap "${formattedTag}" har lagts till`, 'success');
+        } else {
+            showNotification('Denna egenskap finns redan i listan', 'info');
+        }
+    };
+
+    const handleRemoveTag = async (tag) => {
+        console.log('Removing tag:', tag);
+        showConfirmation(`Är du säker på att du vill ta bort taggen "${tag.name}"?`, async () => {
+            try {
+                const response = await fetch(`/api/tags/${tag.id}`, {
+                    method: 'DELETE',
+                });
+
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`Failed to delete tag: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Deleted tag:', data);
+
+                // Uppdatera featuresOptions eller areasOptions baserat på taggens typ
+                if (tag.type === 'egenskap') {
+                    setFeaturesOptions(prevOptions => prevOptions.filter(t => t.id !== tag.id));
+                } else if (tag.type === 'area') {
+                    setAreasOptions(prevOptions => prevOptions.filter(t => t.id !== tag.id));
+                }
+
+                // Uppdatera tags state
+                setTags(prevTags => prevTags.filter(t => t.id !== tag.id));
+
+                showNotification(`Taggen har tagits bort`, 'success');
+            } catch (error) {
+                console.error('Error removing tag:', error);
+                showNotification(`Kunde inte ta bort taggen: ${error.message}`, 'error');
+            }
+        });
+    };
+
+    const handleAddArea = async () => {
+        if (newArea.trim() === '') return;
+        const formattedArea = capitalizeFirstLetter(newArea);
+
+        if (!areasOptions.some(area => area.name.toLowerCase() === formattedArea.toLowerCase())) {
+            try {
+                const response = await fetch('/api/areas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: formattedArea, type: 'area' }),
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const newAreaData = await response.json();
+                const updatedAreas = [...areasOptions, newAreaData];
+                setAreasOptions(updatedAreas);
+                handleAreasChange(updatedAreas);
+                setNewArea('');
+                showNotification(`Område "${formattedArea}" har lagts till`, 'success');
+            } catch (error) {
+                console.error('Error adding area:', error);
+                showNotification('Något gick fel vid tillägg av område', 'error');
+            }
+        } else {
+            showNotification('Detta område finns redan i listan', 'info');
+        }
+    };
+
+    const handleAreasChange = (newAreas) => {
+        setAreasOptions(newAreas);
+        // Om det valda området har tagits bort, återställ valet
+        if (!newAreas.some(area => area.id === selectedArea)) {
+            setSelectedArea('');
+        }
+    };
+
+    const TagDisplay = ({ tags, handleRemoveTag }) => {
+        return (
+            <div className="tags-container">
+                {tags.map((tag) => (
+                    <span key={tag.id} className="tag">
+                        {tag.name}
+                        <button onClick={() => handleRemoveTag(tag)} className="remove-tag">✖</button>
+                    </span>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <div className="card company-form">
             <h2>Lägg till företag</h2>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleCompanySubmit}>
                 <div className="form-group custom-form-group">
                     <label htmlFor="name" className="custom-label">Företagsnamn</label>
                     <input
@@ -247,14 +389,18 @@ function CompanyForm({ onCompanyAdded }) {
                     />
                 </div>
                 <div className="form-group custom-form-group">
-                    <label htmlFor="area" className="custom-label">Område</label>
-                    <input
-                        id="area"
-                        type="text"
-                        value={area}
-                        onChange={handleAreaChange}
-                        className="custom-input"
-                    />
+                    <label htmlFor="area">Område</label>
+                    <select
+                        value={selectedArea}
+                        onChange={(e) => setSelectedArea(e.target.value)}
+                    >
+                        <option value="">Välj område</option>
+                        {areasOptions.map((area) => (
+                            <option key={area.id} value={area.id}>
+                                {area.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
                 <div className="form-group custom-form-group">
                     <label htmlFor="size" className="custom-label">Storlek (kvm)</label>
@@ -277,11 +423,12 @@ function CompanyForm({ onCompanyAdded }) {
                     />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="features">Features</label>
-                    <TagInput
-                        tags={features}
-                        setTags={handleFeaturesTags}
-                        placeholder="Skriv en feature och tryck Enter"
+                    <label htmlFor="egenskaper">Egenskaper</label>
+                    <SelectableTags
+                        options={featuresOptions}
+                        setOptions={setFeaturesOptions}
+                        selectedTags={egenskaper}
+                        setSelectedTags={setEgenskaper}
                     />
                 </div>
                 <div className="form-group custom-form-group">
@@ -296,10 +443,12 @@ function CompanyForm({ onCompanyAdded }) {
                 </div>
                 <div className="form-group">
                     <label htmlFor="desiredAreas">Önskade områden</label>
-                    <TagInput
-                        tags={desiredAreas}
-                        setTags={handleDesiredAreasTags}
-                        placeholder="Skriv ett område och tryck Enter"
+                    <SelectableAreas
+                        options={areasOptions}
+                        selectedAreas={desiredAreas}
+                        setSelectedAreas={setDesiredAreas}
+                        setOptions={setAreasOptions}
+                        onAreasChange={handleAreasChange}
                     />
                 </div>
                 <div className="form-group custom-form-group">
@@ -317,9 +466,9 @@ function CompanyForm({ onCompanyAdded }) {
                             placeholder="Min"
                             style={{ flex: 1 }}
                         />
-                        <span style={{ 
-                            fontSize: '20px', 
-                            fontWeight: 'bold' 
+                        <span style={{
+                            fontSize: '20px',
+                            fontWeight: 'bold'
                         }}>-</span>
                         <input
                             type="number"
@@ -342,16 +491,17 @@ function CompanyForm({ onCompanyAdded }) {
                     />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="desiredFeatures">Önskade features</label>
-                    <TagInput
-                        tags={desiredFeatures}
-                        setTags={handleDesiredFeaturesTags}
-                        placeholder="Skriv en önskad feature och tryck Enter"
+                    <label htmlFor="desiredEgenskaper">Önskade egenskaper</label>
+                    <SelectableTags
+                        options={featuresOptions}
+                        setOptions={setFeaturesOptions}
+                        selectedTags={desiredEgenskaper}
+                        setSelectedTags={setDesiredEgenskaper}
                     />
                 </div>
-                <div style={{display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px'}}>
-                    <button 
-                        type="submit" 
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                    <button
+                        type="submit"
                         disabled={isSubmitting || !!orgNumberError}
                         style={{
                             padding: '8px 16px',
@@ -372,6 +522,112 @@ function CompanyForm({ onCompanyAdded }) {
                     </button>
                 </div>
             </form>
+
+            <hr style={{
+                margin: '20px 0',
+                border: 'none',
+                borderTop: '1px solid #ccc'
+            }} />
+
+            <div className="form-group">
+                <label htmlFor="newArea">Lägg till ett nytt område</label>
+                <div className="add-item-container">
+                    <input
+                        type="text"
+                        value={newArea}
+                        onChange={(e) => setNewArea(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddArea();
+                            }
+                        }}
+                        placeholder="Nytt område"
+                        className="custom-input"
+                    />
+                    <button type="button" onClick={handleAddArea} className="add-button">Lägg till</button>
+                </div>
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="newTag">Lägg till en ny egenskap</label>
+                <div className="add-item-container">
+                    <input
+                        type="text"
+                        value={newTag}
+                        onChange={(e) => setNewTag(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddTag(e);
+                            }
+                        }}
+                        placeholder="Ny egenskap"
+                        className="custom-input"
+                    />
+                    <button type="button" onClick={handleAddTag} className="add-button">Lägg till</button>
+                </div>
+            </div>
+
+            <TagDisplay tags={tags} handleRemoveTag={handleRemoveTag} />
+
+            <style jsx>{`
+                .tags-container {
+                    display: flex;
+                    flex-wrap: wrap;
+                    margin-top: 10px;
+                }
+                .tag {
+                    background-color: white;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                    padding: 5px 10px;
+                    margin: 5px;
+                    cursor: pointer;
+                    transition: background-color 0.3s;
+                    position: relative;
+                }
+                .tag:hover {
+                    background-color: #f0f0f0;
+                }
+                .remove-tag {
+                    display: none;
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                }
+                .tag:hover .remove-tag {
+                    display: block;
+                }
+                .add-item-container {
+                    display: flex;
+                    gap: 10px;
+                    margin-bottom: 10px;
+                }
+                .custom-input {
+                    flex: 1;
+                    min-width: 150px;
+                    max-width: 300px;
+                    padding: 8px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                }
+                .add-button {
+                    padding: 8px 16px;
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: background-color 0.3s;
+                }
+                .add-button:hover {
+                    background-color: #45a049;
+                }
+            `}</style>
         </div>
     );
 }

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useConfirmation } from './ConfirmationContext';
 import { useNotification } from './NotificationContext';
 import styles from './CompanyModal.module.css';
+import SelectableTags from './SelectableTags';
 
 const capitalizeFirstLetter = (string) => {
     return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
@@ -14,6 +15,8 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
     const { showConfirmation } = useConfirmation();
     const { showNotification } = useNotification();
     const [newTag, setNewTag] = useState('');
+    const [featuresOptions, setFeaturesOptions] = useState([]);
+    const [areasOptions, setAreasOptions] = useState([]);
 
     useEffect(() => {
         setEditedCompany({
@@ -23,6 +26,23 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
             desiredFeatures: Array.isArray(company.desiredFeatures) ? company.desiredFeatures : [],
         });
     }, [company]);
+
+    useEffect(() => {
+        const fetchTags = async () => {
+            try {
+                const response = await fetch('/api/tags');
+                const data = await response.json();
+                const features = data.filter(tag => tag.type === 'feature').map(tag => tag.name);
+                const areas = data.filter(tag => tag.type === 'area').map(tag => tag.name);
+                setFeaturesOptions(features);
+                setAreasOptions(areas);
+            } catch (error) {
+                console.error('Error fetching tags:', error);
+            }
+        };
+
+        fetchTags();
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -215,27 +235,10 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="features">Features</label>
-                        <div className={styles.tagContainer}>
-                            {editedCompany.features.map((feature, index) => (
-                                <span key={index} className={styles.tag}>
-                                    {feature}
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleDeleteTag('features', index)}
-                                        className={styles.deleteTag}
-                                    >
-                                        ×
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
-                        <input
-                            type="text"
-                            value={newTag}
-                            onChange={handleTagInputChange}
-                            onKeyDown={handleTagInputKeyDown('features')}
-                            placeholder="Skriv en feature och tryck Enter"
-                            className={styles.tagInput}
+                        <SelectableTags
+                            options={featuresOptions}
+                            selectedTags={editedCompany.features}
+                            setSelectedTags={(tags) => setEditedCompany({ ...editedCompany, features: tags })}
                         />
                     </div>
                     <div className={styles.formGroup}>
@@ -250,27 +253,10 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="desiredAreas">Önskade områden</label>
-                        <div className={styles.tagContainer}>
-                            {editedCompany.desiredAreas.map((area, index) => (
-                                <span key={index} className={styles.tag}>
-                                    {area}
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleDeleteTag('desiredAreas', index)}
-                                        className={styles.deleteTag}
-                                    >
-                                        ×
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
-                        <input
-                            type="text"
-                            value={newTag}
-                            onChange={handleTagInputChange}
-                            onKeyDown={handleTagInputKeyDown('desiredAreas')}
-                            placeholder="Skriv ett område och tryck Enter"
-                            className={styles.tagInput}
+                        <SelectableTags
+                            options={areasOptions}
+                            selectedTags={editedCompany.desiredAreas}
+                            setSelectedTags={(tags) => setEditedCompany({ ...editedCompany, desiredAreas: tags })}
                         />
                     </div>
                     <div className={styles.formGroup}>
@@ -307,27 +293,10 @@ function CompanyModal({ company, onClose, onCompanyUpdated }) {
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="desiredFeatures">Önskade features</label>
-                        <div className={styles.tagContainer}>
-                            {editedCompany.desiredFeatures.map((feature, index) => (
-                                <span key={index} className={styles.tag}>
-                                    {feature}
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleDeleteTag('desiredFeatures', index)}
-                                        className={styles.deleteTag}
-                                    >
-                                        ×
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
-                        <input
-                            type="text"
-                            value={newTag}
-                            onChange={handleTagInputChange}
-                            onKeyDown={handleTagInputKeyDown('desiredFeatures')}
-                            placeholder="Skriv en önskad feature och tryck Enter"
-                            className={styles.tagInput}
+                        <SelectableTags
+                            options={featuresOptions}
+                            selectedTags={editedCompany.desiredFeatures}
+                            setSelectedTags={(tags) => setEditedCompany({ ...editedCompany, desiredFeatures: tags })}
                         />
                     </div>
                     <div className={styles.buttonGroup}>

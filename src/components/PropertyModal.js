@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useConfirmation } from './ConfirmationContext';
 import { useNotification } from './NotificationContext';
 import styles from './PropertyModal.module.css';
+import SelectableTags from './SelectableTags';
 
 const capitalizeFirstLetter = (string) => {
     return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
@@ -14,6 +15,25 @@ function PropertyModal({ property, onClose, onPropertyUpdated }) {
     const { showConfirmation } = useConfirmation();
     const { showNotification } = useNotification();
     const [newTag, setNewTag] = useState('');
+    const [featuresOptions, setFeaturesOptions] = useState([]);
+    const [areasOptions, setAreasOptions] = useState([]);
+
+    useEffect(() => {
+        const fetchTags = async () => {
+            try {
+                const response = await fetch('/api/tags');
+                const data = await response.json();
+                const features = data.filter(tag => tag.type === 'feature').map(tag => tag.name);
+                const areas = data.filter(tag => tag.type === 'area').map(tag => tag.name);
+                setFeaturesOptions(features);
+                setAreasOptions(areas);
+            } catch (error) {
+                console.error('Error fetching tags:', error);
+            }
+        };
+
+        fetchTags();
+    }, []);
 
     useEffect(() => {
         console.log('Setting editedProperty:', property);
@@ -153,36 +173,18 @@ function PropertyModal({ property, onClose, onPropertyUpdated }) {
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="area">Område</label>
-                        <input
-                            id="area"
-                            name="area"
-                            value={editedProperty.area}
-                            onChange={handleInputChange}
+                        <SelectableTags
+                            options={areasOptions}
+                            selectedTags={[editedProperty.area]}
+                            setSelectedTags={(tags) => setEditedProperty({ ...editedProperty, area: tags[0] })}
                         />
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="features">Features</label>
-                        <div className={styles.tagContainer}>
-                            {editedProperty.features.map((feature, index) => (
-                                <span key={index} className={styles.tag}>
-                                    {feature}
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleDeleteTag('features', index)}
-                                        className={styles.deleteTag}
-                                    >
-                                        ×
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
-                        <input
-                            type="text"
-                            value={newTag}
-                            onChange={handleTagInputChange}
-                            onKeyDown={handleTagInputKeyDown('features')}
-                            placeholder="Skriv en feature och tryck Enter"
-                            className={styles.tagInput}
+                        <SelectableTags
+                            options={featuresOptions}
+                            selectedTags={editedProperty.features}
+                            setSelectedTags={(tags) => setEditedProperty({ ...editedProperty, features: tags })}
                         />
                     </div>
                     <div className={styles.formGroup}>

@@ -1,0 +1,34 @@
+.selectableAreasContainer {
+    display: flex; /* Flexbox för att placera områden i rad */
+    flex-wrap: wrap; /* Tillåt att områdena bryts till nästa rad */
+    gap: 10px; /* Avstånd mellan områden */
+}
+
+.area {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    position: relative; /* Lägg till positionering för kryssknappen */
+}
+
+.removeButton {
+    display: none; /* Döljer kryssknappen som standard */
+    position: absolute; /* Positionera kryssknappen */
+    top: 0; /* Flytta upp till toppen */
+    left: 0; /* Flytta till vänster */
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.area:hover .removeButton {
+    display: block; /* Visa kryssknappen vid hover */
+}
+
+.area.selected {
+    background-color: #4CAF50;
+    color: white;
+}
