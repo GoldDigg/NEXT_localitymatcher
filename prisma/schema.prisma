@@ -10,19 +10,19 @@ datasource db {
 model Company {
   id                Int     @id @default(autoincrement())
   name              String  // Företagsnamn
-  orgNumber         String  // Org nummer
+  orgNumber         String  @unique // Org nummer
   streetAddress     String  // Gatuadress
   currentAreaId    Int?    // Lägg till en kolumn för att referera till Area
   currentArea      Area?   @relation("CurrentCompanyArea", fields: [currentAreaId], references: [id]) // Nuvarande område
   desiredAreas      Area[]  @relation("DesiredCompanyAreas") // Önskade områden
   size              Float?  // Storlek
   rent              Float?  // Hyra
-  features          Tag[]   @relation("CompanyFeatures") // Egenskaper (Nuvarande lokals egenskaper)
+  egenskaper          Tag[]   @relation("CompanyEgenskaper") // Egenskaper (Nuvarande lokals egenskaper)
   contractEndDate   DateTime? // Avtalstid t.om
   desiredSizeMin    Float?  // Önskad storlek min
   desiredSizeMax    Float?  // Önskad storlek max
   desiredMaxRent    Float?  // Önskad hyra max
-  desiredFeatures    Tag[]   @relation("CompanyDesiredFeatures") // Önskade egenskaper
+  desiredEgenskaper    Tag[]   @relation("CompanyDesiredEgenskaper") // Önskade egenskaper
 }
 
 model Property {
@@ -30,7 +30,7 @@ model Property {
   address           String   // Adress
   size              Float    // Storlek
   area              String   // Område
-  features          Tag[]    @relation("PropertyFeatures") // Egenskaper
+  egenskaper          Tag[]    @relation("PropertyEgenskaper") // Egenskaper
   rent              Float    // Hyra
   availableFrom     DateTime // Tillgänglig från
   propertyOwner     String   // Fastighetsägare
@@ -41,9 +41,9 @@ model Tag {
     id                Int     @id @default(autoincrement())
     type              String
     name              String
-    companies         Company[] @relation("CompanyFeatures")
-    desiredFeatures   Company[] @relation("CompanyDesiredFeatures") // Motsvarande relation
-    properties        Property[] @relation("PropertyFeatures")
+    companies         Company[] @relation("CompanyEgenskaper")
+    desiredEgenskaper   Company[] @relation("CompanyDesiredEgenskaper") // Motsvarande relation
+    properties        Property[] @relation("PropertyEgenskaper")
 }
 
 model Area {

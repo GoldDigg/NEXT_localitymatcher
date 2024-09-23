@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import SelectableTags from './SelectableTags';
 import { useRouter } from 'next/navigation';
 import SelectableAreas from './SelectableAreas';
+import { capitalizeFirstLetter } from '../utils/stringUtils';
 
 function CompanyForm({ onCompanyAdded }) {
     const { showConfirmation } = useConfirmation();
@@ -51,9 +52,9 @@ function CompanyForm({ onCompanyAdded }) {
                 const areasData = await areasResponse.json();
 
                 const egenskaper = tagsData.filter(tag => tag.type === 'egenskap');
-                setFeaturesOptions(egenskaper);
-                setAreasOptions(areasData);
-                setAreas(areasData);
+                setFeaturesOptions(egenskaper.sort((a, b) => a.name.localeCompare(b.name)));
+                setAreasOptions(areasData.sort((a, b) => a.name.localeCompare(b.name)));
+                setAreas(areasData.sort((a, b) => a.name.localeCompare(b.name)));
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -82,7 +83,6 @@ function CompanyForm({ onCompanyAdded }) {
             const data = await response.json();
             console.log('API response data:', data);
 
-            // Kontrollera om 'exists' finns i svaret och är en boolean
             if (typeof data.exists === 'boolean') {
                 return !data.exists; // Returnera true om organisationsnumret INTE existerar
             } else {
@@ -249,14 +249,39 @@ function CompanyForm({ onCompanyAdded }) {
         }
     };
 
-    const handleAddTag = (e) => {
+    const handleAddTag = async (e) => {
         e.preventDefault();
-        if (newTag.trim() === '') return;
+        if (!newTag.trim()) return;
+
         const formattedTag = capitalizeFirstLetter(newTag.trim());
+
         if (!featuresOptions.some(tag => tag.name.toLowerCase() === formattedTag.toLowerCase())) {
-            setFeaturesOptions(prev => [...prev, { id: Date.now(), name: formattedTag, type: 'egenskap' }]);
-            setNewTag('');
-            showNotification(`Egenskap "${formattedTag}" har lagts till`, 'success');
+            try {
+                const response = await fetch('/api/tags', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        name: formattedTag, 
+                        type: 'egenskap',
+                        tag: formattedTag  // Lägg till detta
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to add tag');
+                }
+
+                const savedTag = await response.json();
+                setFeaturesOptions(prev => [...prev, savedTag]);
+                setNewTag('');
+                showNotification(`Egenskap "${formattedTag}" har lagts till`, 'success');
+            } catch (error) {
+                console.error('Error adding tag:', error);
+                showNotification(`Ett fel uppstod: ${error.message}`, 'error');
+            }
         } else {
             showNotification('Denna egenskap finns redan i listan', 'info');
         }
